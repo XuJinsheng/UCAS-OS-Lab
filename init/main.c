@@ -13,6 +13,7 @@ char buf[VERSION_BUF];
 
 // Task info array
 task_info_t tasks[TASK_MAXNUM];
+short task_num = 0;
 
 static int bss_check(void)
 {
@@ -30,16 +31,69 @@ static void init_jmptab(void)
 {
     volatile long (*(*jmptab))() = (volatile long (*(*))())KERNEL_JMPTAB_BASE;
 
-    jmptab[CONSOLE_PUTSTR]  = (long (*)())port_write;
+    jmptab[CONSOLE_PUTSTR] = (long (*)())port_write;
     jmptab[CONSOLE_PUTCHAR] = (long (*)())port_write_ch;
     jmptab[CONSOLE_GETCHAR] = (long (*)())port_read_ch;
-    jmptab[SD_READ]         = (long (*)())sd_read;
+    jmptab[SD_READ] = (long (*)())sd_read;
 }
 
 static void init_task_info(void)
 {
     // TODO: [p1-task4] Init 'tasks' array via reading app-info sector
     // NOTE: You need to get some related arguments from bootblock first
+    // the sdcard block_id of task_info_t is stored in 0x502001f0
+    // the number of tasks is stored in 0x502001f4
+    // assert(sizeof(task_info_t) == 32);
+    int block_id = *(int *)0x502001f0;
+    bios_sd_read(tasks, 1, block_id);
+    task_num = *(short *)0x502001f4;
+}
+
+int getchar()
+{
+    int ch = -1;
+    while (ch == -1)
+    {
+        ch = bios_getchar();
+    }
+    if (ch == '\r')
+        ch = '\n';
+    return ch;
+}
+int getline(char *buf, int size)
+{
+    int i = 0;
+    while (i < size - 1)
+    {
+        buf[i] = getchar();
+        bios_putchar(buf[i]);
+        if (buf[i] == '\r' || buf[i] == '\n')
+        {
+            break;
+        }
+        i++;
+    }
+    buf[i] = '\0';
+    return i;
+}
+void printnum(int num)
+{
+    char buf[16];
+    int i = 0;
+    if (num == 0)
+    {
+        bios_putchar('0');
+        return;
+    }
+    while (num)
+    {
+        buf[i++] = num % 10 + '0';
+        num /= 10;
+    }
+    for (i--; i >= 0; i--)
+    {
+        bios_putchar(buf[i]);
+    }
 }
 
 /************************************************************/
@@ -78,6 +132,7 @@ int main(void)
 
     // TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
     //   and then execute them.
+    task_interact();
 
     // Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
     while (1)
