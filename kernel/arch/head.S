@@ -13,6 +13,9 @@ ENTRY(_start)
 	csrw sie, zero
 	csrw sie, zero
 
+    li gp,0
+    li tp,0
+
 	/* TODO: [p1-task2] clear BSS for flat non-ELF images */
 	la t0,__bss_start
 	la t1,__BSS_END__

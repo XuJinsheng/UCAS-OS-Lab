@@ -4,6 +4,8 @@
 ENTRY(_start)
 
     /* TODO: [p1-task3] setup C runtime environment for the user program */
+    li gp,0
+    li tp,0
     // clear BSS
     la t0,__bss_start
 	la t1,__BSS_END__
