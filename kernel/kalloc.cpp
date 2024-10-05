@@ -13,6 +13,24 @@
 static ptr_t kernMemCurr = FREEMEM_KERNEL;
 static ptr_t userMemCurr = FREEMEM_USER;
 
+
+void *operator new(size_t size)
+{
+	return kalloc(size);
+}
+void *operator new[](size_t size)
+{
+	return kalloc(size);
+}
+void operator delete(void *p)
+{
+	kfree(p);
+}
+void operator delete[](void *p)
+{
+	kfree(p);
+}
+
 void *kalloc(size_t size)
 {
 	size_t s = 1;
@@ -26,6 +44,9 @@ void kfree(void *ptr)
 {
 	// do nothing
 }
+
+
+
 void *allocKernelPage(int numPage)
 {
 	// align PAGE_SIZE

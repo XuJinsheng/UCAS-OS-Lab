@@ -1,6 +1,6 @@
-#include <os/string.h>
+#include <string.h>
 
-void memcpy(uint8_t *dest, const uint8_t *src, uint32_t len)
+void memcpy(uint8_t *dest, const uint8_t *src, size_t len)
 {
 	for (; len != 0; len--)
 	{
@@ -8,7 +8,31 @@ void memcpy(uint8_t *dest, const uint8_t *src, uint32_t len)
 	}
 }
 
-void memset(void *dest, uint8_t val, uint32_t len)
+void *memmove(void *dest, const void *src, size_t count)
+{
+	char *tmp;
+	const char *s;
+
+	if (dest <= src)
+	{
+		tmp = (char *)dest;
+		s = (char *)src;
+		while (count--)
+			*tmp++ = *s++;
+	}
+	else
+	{
+		tmp = (char *)dest;
+		tmp += count;
+		s = (char *)src;
+		s += count;
+		while (count--)
+			*--tmp = *--s;
+	}
+	return dest;
+}
+
+void memset(void *dest, uint8_t val, size_t len)
 {
 	uint8_t *dst = (uint8_t *)dest;
 
@@ -18,12 +42,12 @@ void memset(void *dest, uint8_t val, uint32_t len)
 	}
 }
 
-void bzero(void *dest, uint32_t len)
+void bzero(void *dest, size_t len)
 {
 	memset(dest, 0, len);
 }
 
-int strlen(const char *src)
+size_t strlen(const char *src)
 {
 	int i = 0;
 	while (src[i] != '\0')
@@ -47,9 +71,9 @@ int strcmp(const char *str1, const char *str2)
 	return (*str1) - (*str2);
 }
 
-int strncmp(const char *str1, const char *str2, uint32_t n)
+int strncmp(const char *str1, const char *str2, size_t n)
 {
-	for (uint32_t i = 0; i < n; ++i)
+	for (size_t i = 0; i < n; ++i)
 		if (str1[i] == '\0' || str1[i] != str2[i])
 			return str1[i] - str2[i];
 	return 0;
@@ -69,7 +93,7 @@ char *strcpy(char *dest, const char *src)
 	return tmp;
 }
 
-char *strncpy(char *dest, const char *src, int n)
+char *strncpy(char *dest, const char *src, size_t n)
 {
 	char *tmp = dest;
 
