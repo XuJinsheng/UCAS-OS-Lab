@@ -1,7 +1,10 @@
 #ifndef INCLUDE_STRING_H_
 #define INCLUDE_STRING_H_
 
-#include <type.h>
+#include <stdarg.h>
+#include "common.h"
+
+__BEGIN_DECLS
 
 void memcpy(uint8_t *dest, const uint8_t *src, uint32_t len);
 void memset(void *dest, uint8_t val, uint32_t len);
@@ -13,4 +16,5 @@ char *strncpy(char *dest, const char *src, int n);
 char *strcat(char *dest, const char *src);
 int strlen(const char *src);
 
+__END_DECLS
 #endif

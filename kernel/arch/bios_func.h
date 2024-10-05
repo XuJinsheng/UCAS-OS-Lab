@@ -21,31 +21,34 @@
  * THE SOFTWARE.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * */
 
-#ifndef INCLUDE_COMMON_H_
-#define INCLUDE_COMMON_H_
 
-#include <type.h>
+#ifndef INCLUDE_BIOS_FUNC_H_
+#define INCLUDE_BIOS_FUNC_H_
+#include "common.h"
+__BEGIN_DECLS
 
-#define REG_DAT     0x00
-#define REG_IER     0x01
-#define REG_IIR     0x02
-#define REG_FCR     0x02
-#define REG_LCR     0x03
-#define REG_MCR     0x04
-#define REG_LSR     0x05
-#define REG_MSR     0x06
-#define REG_CR      0x08
-#define REG_MR      0x09
 
-#define COLOR_RED      "\e[31m"
-#define COLOR_GREEN    "\e[32m"
-#define COLOR_YELLOW   "\e[33m"
-#define COLOR_BLUE     "\e[34m"
-#define COLOR_MAGENTA  "\e[35m"
-#define COLOR_CYAN     "\e[36m"
-#define COLOR_RESET    "\e[0m"
+#define REG_DAT 0x00
+#define REG_IER 0x01
+#define REG_IIR 0x02
+#define REG_FCR 0x02
+#define REG_LCR 0x03
+#define REG_MCR 0x04
+#define REG_LSR 0x05
+#define REG_MSR 0x06
+#define REG_CR 0x08
+#define REG_MR 0x09
 
-enum FDT_TYPE {
+#define COLOR_RED "\e[31m"
+#define COLOR_GREEN "\e[32m"
+#define COLOR_YELLOW "\e[33m"
+#define COLOR_BLUE "\e[34m"
+#define COLOR_MAGENTA "\e[35m"
+#define COLOR_CYAN "\e[36m"
+#define COLOR_RESET "\e[0m"
+
+enum FDT_TYPE
+{
     TIMEBASE,
     SLCR_BADE_ADDR,
     ETHERNET_ADDR,
@@ -67,12 +70,12 @@ int port_read_ch(void);
 
 // read blocks from sd card
 // use bios bios_sd_read function
-int sd_read(unsigned mem_address, unsigned num_of_blocks, unsigned block_id);
+int sd_read(void *mem_address, unsigned num_of_blocks, unsigned block_id);
 
 /************************************************************/
 // write blocks to sd card
 // use bios bios_sdwrite function
-int sd_write(unsigned mem_address, unsigned num_of_blocks, unsigned block_id);
+int sd_write(void *mem_address, unsigned num_of_blocks, unsigned block_id);
 
 // set timer
 // use bios set_timer function
@@ -87,4 +90,5 @@ uint64_t read_fdt(enum FDT_TYPE type);
 void qemu_logging(char *str);
 /************************************************************/
 
+__END_DECLS
 #endif

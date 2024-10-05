@@ -4,25 +4,23 @@
  */
 
 #include <asm.h>
-#include <csr.h>
 
 #define KERNEL_STACK		0x50500000
 
 .section ".entry_function","ax"
 ENTRY(_start)
 	/* Mask all interrupts */
-	csrw CSR_SIE, zero
-	csrw CSR_SIP, zero
+	csrw sie, zero
+	csrw sie, zero
 
 	/* TODO: [p1-task2] clear BSS for flat non-ELF images */
 	la t0,__bss_start
 	la t1,__BSS_END__
-	li t2,0
 	beq t0,t1,2$
 1$:
-	// make sure the bss is 1-byte aligned
-	sb t2,0(t0)
-	addi t0,t0,1
+	// make sure the bss is 8-byte aligned
+	sd zero,0(t0)
+	addi t0,t0,8
 	bne t0,t1,1$
 2$:
 

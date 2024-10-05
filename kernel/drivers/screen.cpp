@@ -1,9 +1,5 @@
-#include <screen.h>
+#include <drivers/screen.hpp>
 #include <printk.h>
-#include <os/string.h>
-#include <os/sched.h>
-#include <os/irq.h>
-#include <os/kernel.h>
 
 #define SCREEN_WIDTH    80
 #define SCREEN_HEIGHT   50

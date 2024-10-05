@@ -22,6 +22,7 @@ DIR_UBOOT   = $(DIR_OSLAB)/u-boot
 HOST_CC         = gcc
 CROSS_PREFIX    = riscv64-unknown-linux-gnu-
 CC              = $(CROSS_PREFIX)gcc
+CXX             = $(CROSS_PREFIX)g++
 AR              = $(CROSS_PREFIX)ar
 OBJDUMP         = $(CROSS_PREFIX)objdump
 GDB             = $(CROSS_PREFIX)gdb
@@ -33,16 +34,17 @@ MINICOM         = minicom
 # Build/Debug Flags and Variables
 # -----------------------------------------------------------------------
 
-CFLAGS          = -O0 -fno-builtin -nostdlib -nostdinc -Wall -mcmodel=medany -ggdb3
+CFLAGS          = -O2 -fno-builtin -nostdlib -nostdinc -Wall -mcmodel=medany -ggdb3
+CXXFLAGS        = -O0 -Wall -mcmodel=medany -ggdb3 -fno-builtin -nostdlib -ffreestanding -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics
 
-BOOT_INCLUDE    = -I$(DIR_ARCH)/include
-BOOT_CFLAGS     = $(CFLAGS) $(BOOT_INCLUDE) -Wl,--defsym=TEXT_START=$(BOOTLOADER_ENTRYPOINT) -T riscv.lds
+BOOT_INCLUDE    = -I$(DIR_KERNEL)/arch
+BOOT_CFLAGS     = $(BOOT_INCLUDE) -Wl,--defsym=TEXT_START=$(BOOTLOADER_ENTRYPOINT) -T riscv.lds
 
-KERNEL_INCLUDE  = -I$(DIR_ARCH)/include -Iinclude -Idrivers
-KERNEL_CFLAGS   = $(CFLAGS) $(KERNEL_INCLUDE) -Wl,--defsym=TEXT_START=$(KERNEL_ENTRYPOINT) -T riscv.lds
+KERNEL_INCLUDE  = -I$(DIR_KERNEL)
+KERNEL_CFLAGS   = $(KERNEL_INCLUDE) -Wl,--defsym=TEXT_START=$(KERNEL_ENTRYPOINT) -T riscv.lds
 
 USER_INCLUDE    = -I$(DIR_TINYLIBC)/include
-USER_CFLAGS     = $(CFLAGS) $(USER_INCLUDE)
+USER_CFLAGS     = $(USER_INCLUDE)
 USER_LDFLAGS    = -L$(DIR_BUILD) -ltinyc
 
 QEMU_LOG_FILE   = $(DIR_OSLAB)/oslab-log.txt
@@ -57,12 +59,9 @@ QEMU_DEBUG_OPT  = -s -S
 # UCAS-OS Entrypoints and Variables
 # -----------------------------------------------------------------------
 
-DIR_ARCH        = ./arch/riscv
 DIR_BUILD       = ./build
-DIR_DRIVERS     = ./drivers
-DIR_INIT        = ./init
+DIR_BOOTLOADER 	= ./bootloader
 DIR_KERNEL      = ./kernel
-DIR_LIBS        = ./libs
 DIR_TINYLIBC    = ./tiny_libc
 DIR_TEST        = ./test
 DIR_TEST_PROJ   = $(DIR_TEST)/test_project$(PROJECT_IDX)
@@ -75,15 +74,13 @@ USER_ENTRYPOINT         = 0x52000000
 # UCAS-OS Kernel Source Files
 # -----------------------------------------------------------------------
 
-SRC_BOOT    = $(wildcard $(DIR_ARCH)/boot/*.S)
-SRC_ARCH    = $(wildcard $(DIR_ARCH)/kernel/*.S)
-SRC_BIOS    = $(wildcard $(DIR_ARCH)/bios/*.c)
-SRC_DRIVER  = $(wildcard $(DIR_DRIVERS)/*.c)
-SRC_INIT    = $(wildcard $(DIR_INIT)/*.c)
-SRC_KERNEL  = $(wildcard $(DIR_KERNEL)/*/*.c)
-SRC_LIBS    = $(wildcard $(DIR_LIBS)/*.c)
+SRC_BOOT  =  $(wildcard $(DIR_BOOTLOADER)/*.S)
+SRC_MAIN  += $(wildcard $(DIR_KERNEL)/*.c)
+SRC_MAIN  += $(wildcard $(DIR_KERNEL)/*.cpp)
+SRC_MAIN  =  $(wildcard $(DIR_KERNEL)/*/*.S)
+SRC_MAIN  += $(wildcard $(DIR_KERNEL)/*/*.c)
+SRC_MAIN  += $(wildcard $(DIR_KERNEL)/*/*.cpp)
 
-SRC_MAIN    = $(SRC_ARCH) $(SRC_INIT) $(SRC_BIOS) $(SRC_DRIVER) $(SRC_KERNEL) $(SRC_LIBS)
 
 ELF_BOOT    = $(DIR_BUILD)/bootblock
 ELF_MAIN    = $(DIR_BUILD)/main
@@ -93,7 +90,7 @@ ELF_IMAGE   = $(DIR_BUILD)/image
 # UCAS-OS User Source Files
 # -----------------------------------------------------------------------
 
-SRC_CRT0    = $(wildcard $(DIR_ARCH)/crt0/*.S)
+SRC_CRT0    = $(wildcard $(DIR_TINYLIBC)/crt0/*.S)
 OBJ_CRT0    = $(DIR_BUILD)/$(notdir $(SRC_CRT0:.S=.o))
 
 SRC_LIBC    = $(wildcard ./tiny_libc/*.c)
@@ -127,7 +124,7 @@ floppy:
 	sudo dd if=$(DIR_BUILD)/image of=$(DISK)3 conv=notrunc
 
 asm: $(ELF_BOOT) $(ELF_MAIN) $(ELF_USER)
-	for elffile in $^; do $(OBJDUMP) -d $$elffile > $(notdir $$elffile).txt; done
+	for elffile in $^; do $(OBJDUMP) -d $$elffile > $(notdir $$elffile).s; done
 
 gdb:
 	$(GDB) $(ELF_MAIN) -ex "target remote:1234"
@@ -148,22 +145,22 @@ minicom:
 # -----------------------------------------------------------------------
 
 $(ELF_BOOT): $(SRC_BOOT) riscv.lds
-	$(CC) $(BOOT_CFLAGS) -o $@ $(SRC_BOOT) -e main
+	$(CC) $(CFLAGS) $(BOOT_CFLAGS) -o $@ $(SRC_BOOT) -e main
 
 $(ELF_MAIN): $(SRC_MAIN) riscv.lds
-	$(CC) $(KERNEL_CFLAGS) -o $@ $(SRC_MAIN)
+	$(CXX) $(CXXFLAGS) $(KERNEL_CFLAGS) -o $@ $(SRC_MAIN)
 
 $(OBJ_CRT0): $(SRC_CRT0)
-	$(CC) $(USER_CFLAGS) -I$(DIR_ARCH)/include -c $< -o $@
+	$(CC) $(CFLAGS) $(USER_CFLAGS) -I$(DIR_ARCH)/include -c $< -o $@
 
 $(LIB_TINYC): $(OBJ_LIBC)
 	$(AR) rcs $@ $^
 
 $(DIR_BUILD)/%.o: $(DIR_TINYLIBC)/%.c
-	$(CC) $(USER_CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(USER_CFLAGS) -c $< -o $@
 
 $(DIR_BUILD)/%: $(DIR_TEST_PROJ)/%.c $(OBJ_CRT0) $(LIB_TINYC) riscv.lds
-	$(CC) $(USER_CFLAGS) -o $@ $(OBJ_CRT0) $< $(USER_LDFLAGS) -Wl,--defsym=TEXT_START=$(USER_ENTRYPOINT) -T riscv.lds
+	$(CC) $(CFLAGS) $(USER_CFLAGS) -o $@ $(OBJ_CRT0) $< $(USER_LDFLAGS) -Wl,--defsym=TEXT_START=$(USER_ENTRYPOINT) -T riscv.lds
 	$(eval USER_ENTRYPOINT := $(shell python3 -c "print(hex(int('$(USER_ENTRYPOINT)', 16) + int('0x10000', 16)))"))
 
 elf: $(ELF_BOOT) $(ELF_MAIN) $(LIB_TINYC) $(ELF_USER)
@@ -175,7 +172,7 @@ elf: $(ELF_BOOT) $(ELF_MAIN) $(LIB_TINYC) $(ELF_USER)
 # -----------------------------------------------------------------------
 
 $(ELF_CREATEIMAGE): $(SRC_CREATEIMAGE)
-	$(HOST_CC) $(SRC_CREATEIMAGE) -o $@ -ggdb -Wall
+	$(HOST_CC) $(SRC_CREATEIMAGE) -I$(DIR_INCLUDE) -o $@ -ggdb -Wall
 
 image: $(ELF_CREATEIMAGE) $(ELF_BOOT) $(ELF_MAIN) $(ELF_USER)
 	cd $(DIR_BUILD) && ./$(<F) --extended $(filter-out $(<F), $(^F))
