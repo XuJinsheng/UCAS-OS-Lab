@@ -7,12 +7,11 @@ ENTRY(_start)
     // clear BSS
     la t0,__bss_start
 	la t1,__BSS_END__
-	li t2,0
 	beq t0,t1,2$
 1$:
-	// make sure the bss is 1-byte aligned
-	sb t2,0(t0)
-	addi t0,t0,1
+	// make sure the bss is 8-byte aligned
+	sd zero,0(t0)
+	addi t0,t0,8
 	bne t0,t1,1$
 2$:
     // TODO: I do not know where is the stack pointer, so I just use the same stack pointer as kernel
