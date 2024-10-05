@@ -20,7 +20,7 @@ DIR_UBOOT   = $(DIR_OSLAB)/u-boot
 # -----------------------------------------------------------------------
 
 HOST_CC         = gcc
-CROSS_PREFIX    = riscv64-unknown-linux-gnu-
+CROSS_PREFIX    = /opt/riscv/bin/riscv64-unknown-linux-gnu-
 CC              = $(CROSS_PREFIX)gcc
 CXX             = $(CROSS_PREFIX)g++
 AR              = $(CROSS_PREFIX)ar
@@ -35,7 +35,7 @@ MINICOM         = minicom
 # -----------------------------------------------------------------------
 
 CFLAGS          = -O2 -fno-builtin -nostdlib -nostdinc -Wall -mcmodel=medany -ggdb3
-CXXFLAGS        = -O0 -Wall -mcmodel=medany -ggdb3 -fno-builtin -nostdlib -ffreestanding -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics
+CXXFLAGS        = -O0 -std=c++20 -Wall -mcmodel=medany -ggdb3 -fno-builtin -nostdlib -ffreestanding -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics
 
 BOOT_INCLUDE    = -I$(DIR_KERNEL)/arch
 BOOT_CFLAGS     = $(BOOT_INCLUDE) -Wl,--defsym=TEXT_START=$(BOOTLOADER_ENTRYPOINT) -T riscv.lds
@@ -77,7 +77,7 @@ USER_ENTRYPOINT         = 0x52000000
 SRC_BOOT  =  $(wildcard $(DIR_BOOTLOADER)/*.S)
 SRC_MAIN  += $(wildcard $(DIR_KERNEL)/*.c)
 SRC_MAIN  += $(wildcard $(DIR_KERNEL)/*.cpp)
-SRC_MAIN  =  $(wildcard $(DIR_KERNEL)/*/*.S)
+SRC_MAIN  += $(wildcard $(DIR_KERNEL)/*/*.S)
 SRC_MAIN  += $(wildcard $(DIR_KERNEL)/*/*.c)
 SRC_MAIN  += $(wildcard $(DIR_KERNEL)/*/*.cpp)
 
@@ -138,7 +138,11 @@ debug:
 minicom:
 	sudo $(MINICOM) -D $(TTYUSB1)
 
-.PHONY: all dirs clean floppy asm gdb run debug minicom
+bear:
+	bear -- make
+	mv compile_commands.json .vscode/compile_commands.json
+
+.PHONY: all dirs clean floppy asm gdb run debug minicom bear
 
 # -----------------------------------------------------------------------
 # UCAS-OS Rules
@@ -172,7 +176,7 @@ elf: $(ELF_BOOT) $(ELF_MAIN) $(LIB_TINYC) $(ELF_USER)
 # -----------------------------------------------------------------------
 
 $(ELF_CREATEIMAGE): $(SRC_CREATEIMAGE)
-	$(HOST_CC) $(SRC_CREATEIMAGE) -I$(DIR_INCLUDE) -o $@ -ggdb -Wall
+	$(HOST_CC) $(SRC_CREATEIMAGE) -o $@ -ggdb -Wall
 
 image: $(ELF_CREATEIMAGE) $(ELF_BOOT) $(ELF_MAIN) $(ELF_USER)
 	cd $(DIR_BUILD) && ./$(<F) --extended $(filter-out $(<F), $(^F))
