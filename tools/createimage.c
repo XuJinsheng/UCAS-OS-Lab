@@ -256,6 +256,7 @@ static void write_img_info(int nbytes_kernel, task_info_t *taskinfo,
     fwrite(&os_size, sizeof(short), 1, img);
 
     fseek(img, 0, SEEK_END);
+    assert(ftell(img) % SECTOR_SIZE == 0);
     fwrite(taskinfo, sizeof(task_info_t), TASK_MAXNUM, img);
 }
 
