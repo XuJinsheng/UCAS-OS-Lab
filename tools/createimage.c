@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <os/task.h>
 
 #define IMAGE_FILE "./image"
 #define ARGS "[--extended] [--vm] <bootblock> <executable-file> ..."
@@ -22,6 +21,13 @@
 // task_info_t is defined in os/task.h
 
 #define TASK_MAXNUM 16
+typedef struct
+{
+	unsigned long long entry_point;
+	int sdcard_block_id;
+	int sdcard_block_num;
+	char name[16];
+} task_info_t;
 static task_info_t taskinfo[TASK_MAXNUM];
 
 /* structure to store command line options */
@@ -41,8 +47,7 @@ static uint32_t get_filesz(Elf64_Phdr phdr);
 static uint32_t get_memsz(Elf64_Phdr phdr);
 static void write_segment(Elf64_Phdr phdr, FILE *fp, FILE *img, int *phyaddr);
 static void write_padding(FILE *img, int *phyaddr, int new_phyaddr);
-static void write_img_info(int nbytes_kernel, task_info_t *taskinfo,
-                           short tasknum, FILE *img);
+static void write_img_info(int nbytes_kernel, short tasknum, FILE *img);
 
 int main(int argc, char **argv)
 {
@@ -156,7 +161,7 @@ static void create_image(int nfiles, char *files[])
         fclose(fp);
         files++;
     }
-    write_img_info(nbytes_kernel, taskinfo, tasknum, img);
+    write_img_info(nbytes_kernel, tasknum, img);
 
     fclose(img);
 }
@@ -238,14 +243,13 @@ static void write_padding(FILE *img, int *phyaddr, int new_phyaddr)
     }
 }
 
-static void write_img_info(int nbytes_kernel, task_info_t *taskinfo,
-                           short tasknum, FILE *img)
+static void write_img_info(int nbytes_kernel, short tasknum, FILE *img)
 {
     // TODO: [p1-task3] & [p1-task4] write image info to some certain places
     // NOTE: os size, infomation about app-info sector(s) ...
     // the sdcard block_id of task_info_t is stored in 0x502001f0
     // the number of tasks is stored in 0x502001f4
-    assert(sizeof(tasks) == SECTOR_SIZE);
+    assert(sizeof(taskinfo) == SECTOR_SIZE);
     int task_info_sdcard_id = ftell(img) / SECTOR_SIZE;
     fseek(img, 0x1f0, SEEK_SET);
     fwrite(&task_info_sdcard_id, sizeof(int), 1, img);

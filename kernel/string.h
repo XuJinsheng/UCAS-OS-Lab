@@ -1,8 +1,8 @@
 #ifndef INCLUDE_STRING_H_
 #define INCLUDE_STRING_H_
 
-#include <stdarg.h>
 #include "common.h"
+#include <stdarg.h>
 
 __BEGIN_DECLS
 

@@ -21,12 +21,10 @@
  * THE SOFTWARE.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * */
 
-
 #ifndef INCLUDE_BIOS_FUNC_H_
 #define INCLUDE_BIOS_FUNC_H_
 #include "common.h"
 __BEGIN_DECLS
-
 
 #define REG_DAT 0x00
 #define REG_IER 0x01
@@ -49,45 +47,45 @@ __BEGIN_DECLS
 
 enum FDT_TYPE
 {
-    TIMEBASE,
-    SLCR_BADE_ADDR,
-    ETHERNET_ADDR,
-    PLIC_ADDR,
-    NR_IRQS
+	TIMEBASE,
+	SLCR_BADE_ADDR,
+	ETHERNET_ADDR,
+	PLIC_ADDR,
+	NR_IRQS
 };
 
 // enter a char into serial port
 // use bios printch function
-void port_write_ch(char ch);
+void bios_putchar(char ch);
 
 // enter a message into seraial port
 // use bios printstr function
-void port_write(char *buf);
+void bios_putstr(char *buf);
 
 // get a char from serial port
 // use bios getch function
-int port_read_ch(void);
+int bios_getchar(void);
 
 // read blocks from sd card
 // use bios bios_sd_read function
-int sd_read(void *mem_address, unsigned num_of_blocks, unsigned block_id);
+int bios_sd_read(void *mem_address, unsigned num_of_blocks, unsigned block_id);
 
 /************************************************************/
 // write blocks to sd card
 // use bios bios_sdwrite function
-int sd_write(void *mem_address, unsigned num_of_blocks, unsigned block_id);
+int bios_sd_write(void *mem_address, unsigned num_of_blocks, unsigned block_id);
 
 // set timer
 // use bios set_timer function
-void set_timer(uint64_t stime_value);
+void bios_set_timer(uint64_t stime_value);
 
 // read flat device tree
 // use bios read_fdt function
-uint64_t read_fdt(enum FDT_TYPE type);
+uint64_t bios_read_fdt(enum FDT_TYPE type);
 
 // write debug information to logfile, this function is realized via qemu dump
 // use bios logging function
-void qemu_logging(char *str);
+void bios_logging(char *str);
 /************************************************************/
 
 __END_DECLS

@@ -1,10 +1,13 @@
 #ifndef INCLUDE_PRINTK_H_
 #define INCLUDE_PRINTK_H_
 
-#include <stdarg.h>
 #include "common.h"
+#include <stdarg.h>
 __BEGIN_DECLS
 
+char getchar();
+
+size_t getline(char *buf, size_t size);
 
 /* kernel print */
 int printk(const char *fmt, ...);
