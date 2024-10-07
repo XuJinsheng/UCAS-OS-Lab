@@ -15,6 +15,7 @@
 user_trap_entry:
 	csrw sscratch, x31
 	la x31, current_running
+	ld x31, 0(x31)
 	sd x1, (USER_BASE+0)(x31)
 	sd x2, (USER_BASE+8)(x31)
 	sd x3, (USER_BASE+16)(x31)
@@ -65,6 +66,7 @@ user_trap_entry:
 
 user_trap_return:# return to user space, kernel stack is clear
 	la x31, current_running
+	ld x31, 0(x31)
 	ld x1, (USER_BASE+256)(x31)
 	csrw sepc, x1
 	la t0, user_trap_entry

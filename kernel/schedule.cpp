@@ -58,11 +58,12 @@ void do_scheduler()
 	}
 	else
 	{
+		Thread *from_thread = current_running;
 		Thread *next_thread = ready_queue.front();
 		ready_queue.pop();
 		next_thread->status = Thread::TASK_RUNNING;
 		current_running = next_thread;
-		switch_context_entry(current_running->kernel_context.regs, next_thread->kernel_context.regs);
+		switch_context_entry(from_thread->kernel_context.regs, next_thread->kernel_context.regs);
 	}
 }
 void add_ready_thread(Thread *thread)

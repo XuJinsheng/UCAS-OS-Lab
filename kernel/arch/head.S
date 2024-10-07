@@ -24,7 +24,7 @@ ENTRY(_start)
 	// make sure the bss is 8-byte aligned
 	sd zero,0(t0)
 	addi t0,t0,8
-	bne t0,t1,1$
+	blt t0,t1,1$
 2$:
 
 	/* TODO: [p1-task2] setup C environment */

@@ -19,7 +19,7 @@ Thread::Thread(ptr_t start_address)
 {
 	pid = next_pid++;
 	user_context.sepc = start_address;
-	user_context.regs[2] = (ptr_t)allocUserPage(1) + PAGE_SIZE;
+	user_context.regs[1] = (ptr_t)allocUserPage(1) + PAGE_SIZE;
 	kernel_stack_top = (ptr_t)allocKernelPage(1) + PAGE_SIZE;
 	kernel_context.regs[0] = (ptr_t)user_trap_return;
 	kernel_context.regs[1] = kernel_stack_top;
