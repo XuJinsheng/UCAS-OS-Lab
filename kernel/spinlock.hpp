@@ -1,3 +1,5 @@
+#define _NEW
+#undef _GLIBCXX_HOSTED
 #include <atomic>
 
 // Used in multi-core environment
@@ -9,12 +11,12 @@ public:
 	}
 	void lock()
 	{
-		while (flag.test_and_set(std::memory_order_acquire))
+		while (flag.test_and_set())
 			;
 	}
 	void unlock()
 	{
-		flag.clear(std::memory_order_release);
+		flag.clear();
 	}
 
 private:

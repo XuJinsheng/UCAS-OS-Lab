@@ -1,3 +1,4 @@
+#define _NEW
 #include <arch/trap_entry.h>
 #include <assert.h>
 #include <common.h>
@@ -5,43 +6,7 @@
 #include <schedule.hpp>
 #include <thread.hpp>
 
-template <typename T> class queue
-{
-private:
-	constexpr static int MAX_SIZE = 16;
-	T data[MAX_SIZE];
-	int head, tail;
-
-public:
-	queue() : head(0), tail(0)
-	{
-	}
-	~queue()
-	{
-	}
-	void push(T val)
-	{
-		assert((tail + 1) % MAX_SIZE != head);
-		data[tail] = val;
-		tail = (tail + 1) % MAX_SIZE;
-	}
-	void pop()
-	{
-		assert(head != tail);
-		head = (head + 1) % MAX_SIZE;
-	}
-	T front()
-	{
-		assert(head != tail);
-		return data[head];
-	}
-	bool empty()
-	{
-		return head == tail;
-	}
-};
-
-queue<Thread*> ready_queue;
+std::queue<Thread*,std::deque<Thread*,Kallocator<Thread*>>> ready_queue;
 
 void do_scheduler()
 {

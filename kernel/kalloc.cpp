@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <kalloc.hpp>
 
 #define MEM_SIZE 32
@@ -5,6 +6,18 @@
 #define INIT_USER_STACK 0x52500000
 #define FREEMEM_KERNEL (INIT_KERNEL_STACK + PAGE_SIZE)
 #define FREEMEM_USER INIT_USER_STACK
+
+namespace std
+{
+void terminate() noexcept
+{
+	assert(false);
+}
+void __throw_length_error(char const* s){
+	printl(s);
+	assert(false);
+}
+} // namespace std
 
 constexpr size_t cal_align(size_t a, size_t n)
 {
@@ -17,18 +30,42 @@ void *operator new(size_t size)
 {
 	return kalloc(size);
 }
+
+/* void* operator new(size_t size, std::nothrow_t const&) noexcept
+{
+	return kalloc(size);
+} */
+
+void operator delete(void *ptr) noexcept
+{
+	return kfree(ptr);
+}
+
+void operator delete(void *ptr, size_t) noexcept
+{
+	return kfree(ptr);
+}
+
 void *operator new[](size_t size)
 {
 	return kalloc(size);
 }
-void operator delete(void *p)
+
+/* void* operator new[](size_t size, std::nothrow_t const&) noexcept
 {
-	kfree(p);
-}
-void operator delete[](void *p)
+	return kalloc(size);
+} */
+
+void operator delete[](void *ptr) noexcept
 {
-	kfree(p);
+	return kfree(ptr);
 }
+
+void operator delete[](void *ptr, size_t) noexcept
+{
+	return kfree(ptr);
+}
+
 
 void init_kernel_heap()
 {
