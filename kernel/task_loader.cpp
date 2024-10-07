@@ -1,21 +1,41 @@
-#include <os/kernel.h>
-#include <os/string.h>
-#include <os/task.h>
-#include <type.h>
+#include <arch/bios_func.h>
+#include <common.h>
+#include <string.h>
+#include <task_loader.hpp>
+
+// ATTENTION: The size of task_info_t must be 32 bytes
+struct task_info_t
+{
+	unsigned long long entry_point;
+	int sdcard_block_id;
+	int sdcard_block_num;
+	char name[16];
+};
+
+task_info_t tasks[TASK_MAXNUM];
+short task_num = 0;
+
+void init_task_info(void)
+{
+	// the sdcard block_id of task_info_t is stored in 0x502001f0
+	// the number of tasks is stored in 0x502001f4
+	// assert(sizeof(task_info_t) == 32);
+	int block_id = *(int *)0x502001f0;
+	bios_sd_read(tasks, 1, block_id);
+	task_num = *(short *)0x502001f4;
+}
 
 uint64_t load_task_img(int taskid)
 {
-	/* TODO: * [p1-task3] load task from image via task id, and return its entrypoint */
 	if (taskid >= task_num)
 		return 0;
 	uint64_t entry = tasks[taskid].entry_point;
-	bios_sd_read(entry, tasks[taskid].sdcard_block_num, tasks[taskid].sdcard_block_id);
+	bios_sd_read((void *)entry, tasks[taskid].sdcard_block_num, tasks[taskid].sdcard_block_id);
 	return entry;
 }
 
 uint64_t load_task_img_by_name(const char *taskname)
 {
-	/* TODO: [p1-task4] load task via task name, thus the arg should be 'char *taskname' */
 	for (int i = 0; i < task_num; i++)
 	{
 		if (strcmp(tasks[i].name, taskname) == 0)
@@ -24,55 +44,4 @@ uint64_t load_task_img_by_name(const char *taskname)
 		}
 	}
 	return 0;
-}
-
-void task_interact()
-{
-Label:
-	bios_putstr("Task list:\n");
-	for (int i = 0; i < task_num; i++)
-	{
-		bios_putchar('0' + i);
-		bios_putstr(": ");
-		bios_putstr(tasks[i].name);
-		bios_putchar('\n');
-	}
-	bios_putstr("x: batch task\n");
-	char str[32];
-	bios_putstr("Please select task: ");
-	int len = getline(str, 32);
-	if (str[0] == 'x')
-	{
-		uint64_t entry = load_task_img_by_name("xjs1");
-		((void (*)(void))entry)();
-		entry = load_task_img_by_name("xjs2");
-		((void (*)(void))entry)();
-		entry = load_task_img_by_name("xjs3");
-		((void (*)(void))entry)();
-		entry = load_task_img_by_name("xjs4");
-		((void (*)(void))entry)();
-		bios_putchar('\n');
-		bios_putchar('\n');
-	}
-	else
-	{
-		uint64_t entry = 0;
-		if (len == 1 && str[0] >= '0' && str[0] < '0' + task_num)
-			entry = load_task_img(str[0] - '0');
-		else
-			entry = load_task_img_by_name(str);
-		if (entry == 0)
-			bios_putstr("Task not found!\n");
-		else
-		{
-			printnum(entry);
-			bios_putchar(' ');
-			printnum(*(int *)entry);
-			bios_putchar('\n');
-			((void (*)(void))entry)();
-			bios_putchar('\n');
-			bios_putchar('\n');
-		}
-	}
-	goto Label;
 }

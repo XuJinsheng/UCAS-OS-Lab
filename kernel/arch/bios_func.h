@@ -23,7 +23,7 @@
 
 #ifndef INCLUDE_BIOS_FUNC_H_
 #define INCLUDE_BIOS_FUNC_H_
-#include "common.h"
+#include <common.h>
 __BEGIN_DECLS
 
 #define REG_DAT 0x00
@@ -45,6 +45,9 @@ __BEGIN_DECLS
 #define COLOR_CYAN "\e[36m"
 #define COLOR_RESET "\e[0m"
 
+#define SECTOR_SIZE 512
+#define NBYTES2SEC(nbytes) (((nbytes) / SECTOR_SIZE) + ((nbytes) % SECTOR_SIZE != 0))
+
 enum FDT_TYPE
 {
 	TIMEBASE,
@@ -60,7 +63,7 @@ void bios_putchar(char ch);
 
 // enter a message into seraial port
 // use bios printstr function
-void bios_putstr(char *buf);
+void bios_putstr(const char *buf);
 
 // get a char from serial port
 // use bios getch function
@@ -85,7 +88,7 @@ uint64_t bios_read_fdt(enum FDT_TYPE type);
 
 // write debug information to logfile, this function is realized via qemu dump
 // use bios logging function
-void bios_logging(char *str);
+void bios_logging(const char *str);
 /************************************************************/
 
 __END_DECLS

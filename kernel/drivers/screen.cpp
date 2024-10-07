@@ -1,5 +1,8 @@
-#include <drivers/screen.hpp>
-#include <printk.h>
+#include <arch/bios_func.h>
+#include <drivers/screen.h>
+#include <kstdio.h>
+#include <string.h>
+#include <thread.hpp>
 
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 50
@@ -93,7 +96,7 @@ void screen_move_cursor(int x, int y)
 	vt100_move_cursor(x + 1, y + 1);
 }
 
-void screen_write(char *buff)
+void screen_write(const char *buff)
 {
 	int i = 0;
 	int l = strlen(buff);

@@ -1,10 +1,12 @@
 #include <string.h>
 
-void memcpy(uint8_t *dest, const uint8_t *src, size_t len)
+void memcpy(void *dest, const void *src, size_t len)
 {
+	char *d = (char *)dest;
+	const char *s = (const char *)src;
 	for (; len != 0; len--)
 	{
-		*dest++ = *src++;
+		*d++ = *s++;
 	}
 }
 

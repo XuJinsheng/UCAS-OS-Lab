@@ -1,24 +1,12 @@
-#ifndef __INCLUDE_TASK_H__
-#define __INCLUDE_TASK_H__
+#pragma once
+
+#include <common.h>
 
 #define TASK_MEM_BASE 0x52000000
 #define TASK_MAXNUM 16
 #define TASK_SIZE 0x10000
 
-#define SECTOR_SIZE 512
-#define NBYTES2SEC(nbytes) (((nbytes) / SECTOR_SIZE) + ((nbytes) % SECTOR_SIZE != 0))
 
-/* TODO: [p1-task4] implement your own task_info_t! */
-// ATTENTION: The size of task_info_t must be 32 bytes
-typedef struct
-{
-	unsigned long long entry_point;
-	int sdcard_block_id;
-	int sdcard_block_num;
-	char name[16];
-} task_info_t;
-
-extern task_info_t tasks[TASK_MAXNUM];
-extern short task_num;
-
-#endif
+extern void	init_task_info();
+extern uint64_t load_task_img(int taskid);
+extern uint64_t load_task_img_by_name(const char *taskname);

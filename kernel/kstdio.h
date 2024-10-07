@@ -1,7 +1,7 @@
 #ifndef INCLUDE_PRINTK_H_
 #define INCLUDE_PRINTK_H_
 
-#include "common.h"
+#include <common.h>
 #include <stdarg.h>
 __BEGIN_DECLS
 

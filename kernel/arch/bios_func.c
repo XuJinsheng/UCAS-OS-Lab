@@ -18,7 +18,7 @@ void bios_putchar(char ch)
 	call_bios((long)BIOS_PUTCHAR, (long)ch, IGNORE, IGNORE, IGNORE, IGNORE);
 }
 
-void bios_putstr(char *str)
+void bios_putstr(const char *str)
 {
 	call_bios((long)BIOS_PUTSTR, (long)str, IGNORE, IGNORE, IGNORE, IGNORE);
 }
@@ -48,7 +48,7 @@ uint64_t bios_read_fdt(enum FDT_TYPE type)
 	return (uint64_t)call_bios((long)BIOS_FDTREAD, (long)type, IGNORE, IGNORE, IGNORE, IGNORE);
 }
 
-void bios_logging(char *str)
+void bios_logging(const char *str)
 {
 	call_bios((long)BIOS_LOGGING, (long)str, IGNORE, IGNORE, IGNORE, IGNORE);
 }

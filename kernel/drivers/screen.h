@@ -27,6 +27,10 @@
 #ifndef INCLUDE_CONSOLE_H_
 #define INCLUDE_CONSOLE_H_
 
+#include <common.h>
+
+__BEGIN_DECLS
+
 /* configuring screen properties */
 void init_screen(void);
 
@@ -37,9 +41,10 @@ void screen_clear(void);
 void screen_reflush(void);
 
 /* screen write string */
-void screen_write(char *buff);
+void screen_write(const char *buff);
 
 /* move cursor int (x,y) */
 void screen_move_cursor(int x, int y);
 
+__END_DECLS
 #endif

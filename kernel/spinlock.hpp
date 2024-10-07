@@ -4,8 +4,9 @@
 class SpinLock
 {
 public:
-	SpinLock()
-		: flag(false) {}
+	SpinLock() : flag(false)
+	{
+	}
 	void lock()
 	{
 		while (flag.test_and_set(std::memory_order_acquire))
