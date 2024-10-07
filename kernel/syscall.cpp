@@ -1,8 +1,8 @@
 #include <common.h>
+#include <drivers/screen.h>
+#include <schedule.hpp>
 #include <syscall.hpp>
 #include <thread.hpp>
-#include <schedule.hpp>
-#include <drivers/screen.h>
 
 void init_syscall()
 {
@@ -46,40 +46,27 @@ ptr_t handle_syscall(const ptr_t args[8])
 		Syscall::set_sche_workload(args[0]);
 		break;
 	}
-    return ret;
+	return ret;
 }
 
 void Syscall::yield(void)
 {
-    do_scheduler();
+	do_scheduler();
 }
 
 void Syscall::move_cursor(int x, int y)
 {
-    screen_move_cursor(x,y);    
+	screen_move_cursor(x, y);
 }
 
 void Syscall::write(char *buff)
 {
-    screen_write(buff);
+	screen_write(buff);
 }
 
 void Syscall::reflush(void)
 {
-    screen_reflush();
-}
-
-int Syscall::mutex_init(int key)
-{
-	return 0;
-}
-
-void Syscall::mutex_acquire(int mutex_idx)
-{
-}
-
-void Syscall::mutex_release(int mutex_idx)
-{
+	screen_reflush();
 }
 
 long Syscall::get_timebase(void)

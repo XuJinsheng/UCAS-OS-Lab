@@ -55,6 +55,8 @@ int main(void)
 	add_ready_thread(new Thread(load_task_img_by_name("print1")));
 	add_ready_thread(new Thread(load_task_img_by_name("print2")));
 	add_ready_thread(new Thread(load_task_img_by_name("fly")));
+	add_ready_thread(new Thread(load_task_img_by_name("lock1")));
+	add_ready_thread(new Thread(load_task_img_by_name("lock2")));
 
 	// Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
 	while (1)
