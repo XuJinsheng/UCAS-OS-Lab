@@ -13,10 +13,22 @@ void terminate() noexcept
 {
 	assert(false);
 }
-void __throw_length_error(char const* s){
+void __throw_length_error(char const *s)
+{
 	printl(s);
 	assert(false);
 }
+void __throw_bad_alloc()
+{
+	printl("bad alloc");
+	assert(false);
+}
+void __throw_bad_array_new_length()
+{
+	printl("bad array new length");
+	assert(false);
+}
+
 } // namespace std
 
 constexpr size_t cal_align(size_t a, size_t n)
@@ -65,7 +77,6 @@ void operator delete[](void *ptr, size_t) noexcept
 {
 	return kfree(ptr);
 }
-
 
 void init_kernel_heap()
 {

@@ -6,7 +6,7 @@
 #include <schedule.hpp>
 #include <thread.hpp>
 
-std::queue<Thread*,std::deque<Thread*,Kallocator<Thread*>>> ready_queue;
+std::queue<Thread*> ready_queue;
 
 void do_scheduler()
 {
