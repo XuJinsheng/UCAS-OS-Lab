@@ -42,7 +42,7 @@ void Syscall::mutex_acquire(int mutex_idx)
 		return;
 	if (lock.owner != nullptr)
 	{
-		lock.wait_queue.push(current_running);
+		lock.wait_queue.push((Thread *)current_running);
 		current_running->status = Thread::TASK_BLOCKED;
 		do_scheduler();
 	}

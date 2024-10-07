@@ -19,7 +19,6 @@ class Thread
 public:
 	// fixed for asm
 	user_context_reg_t user_context;
-	kernel_context_reg_t kernel_context;
 	ptr_t kernel_stack_top;
 
 
@@ -44,7 +43,4 @@ public:
 };
 
 extern void init_pcb();
-extern "C"
-{
-	extern Thread *current_running;
-}
+register Thread * current_running asm("tp");

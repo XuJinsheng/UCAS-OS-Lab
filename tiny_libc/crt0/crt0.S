@@ -16,7 +16,7 @@ ENTRY(_start)
 	addi t0,t0,8
 	blt t0,t1,1$
 2$:
-    // TODO: I do not know where is the stack pointer, so I just use the same stack pointer as kernel
+    // TODO: sp is set by the kernel
 
     /* TODO: [p1-task3] enter main function */
     addi sp,sp,-8

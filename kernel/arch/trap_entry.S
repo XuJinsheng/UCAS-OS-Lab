@@ -13,8 +13,8 @@
 .balign 4
 
 user_trap_entry:
-	csrw sscratch, x31
-	ld x31, current_running
+	csrrw x31,sscratch,x31
+	// x31 = current_running
 	sd x1, (USER_BASE+0)(x31)
 	sd x2, (USER_BASE+8)(x31)
 	sd x3, (USER_BASE+16)(x31)
@@ -56,7 +56,8 @@ user_trap_entry:
 	csrr t0, stval
 	sd t0, (USER_BASE+272)(x31)
 
-	ld sp, (USER_BASE+392)(x31)
+	mv tp, x31//current_running
+	ld sp, (USER_BASE+280)(x31)//kernel_stack_top
 
 	la t1, kernel_trap_entry
 	csrw stvec, t1
@@ -64,9 +65,10 @@ user_trap_entry:
 	call user_trap_handler
 
 user_trap_return:# return to user space, kernel stack is clear
-	ld x31, current_running
-	ld x1, (USER_BASE+256)(x31)
-	csrw sepc, x1
+	mv x31, tp
+	csrw sscratch, tp
+	ld t0, (USER_BASE+256)(x31)
+	csrw sepc, t0
 	la t0, user_trap_entry
 	csrw stvec, t0
 
@@ -108,36 +110,39 @@ kernel_trap_entry:
 	.word 0
 	sret
 
-# void switch_context_entry(kernel_context_reg_t *from_reg,kernel_context_reg_t *to_reg);
+# void switch_context_entry(Thread* to);
 switch_context_entry:
-	sd ra, 0(a0)
-	sd sp, 8(a0)
-	sd s0, 16(a0)
-	sd s1, 24(a0)
-	sd s2, 32(a0)
-	sd s3, 40(a0)
-	sd s4, 48(a0)
-	sd s5, 56(a0)
-	sd s6, 64(a0)
-	sd s7, 72(a0)
-	sd s8, 80(a0)
-	sd s9, 88(a0)
-	sd s10, 96(a0)
-	sd s11, 104(a0)
-	ld ra, 0(a1)
-	ld sp, 8(a1)
-	ld s0, 16(a1)
-	ld s1, 24(a1)
-	ld s2, 32(a1)
-	ld s3, 40(a1)
-	ld s4, 48(a1)
-	ld s5, 56(a1)
-	ld s6, 64(a1)
-	ld s7, 72(a1)
-	ld s8, 80(a1)
-	ld s9, 88(a1)
-	ld s10, 96(a1)
-	ld s11, 104(a1)
+	addi sp, sp, -13*8
+	sd ra, 0(sp)
+	sd s0, 8(sp)
+	sd s1, 16(sp)
+	sd s2, 24(sp)
+	sd s3, 32(sp)
+	sd s4, 40(sp)
+	sd s5, 48(sp)
+	sd s6, 56(sp)
+	sd s7, 64(sp)
+	sd s8, 72(sp)
+	sd s9, 80(sp)
+	sd s10, 88(sp)
+	sd s11, 96(sp)
+	sd sp,(USER_BASE+280)(tp)
+	mv tp,a0
+	ld sp, (USER_BASE+280)(tp)
+	ld ra, 0(sp)
+	ld s0, 8(sp)
+	ld s1, 16(sp)
+	ld s2, 24(sp)
+	ld s3, 32(sp)
+	ld s4, 40(sp)
+	ld s5, 48(sp)
+	ld s6, 56(sp)
+	ld s7, 64(sp)
+	ld s8, 72(sp)
+	ld s9, 80(sp)
+	ld s10, 88(sp)
+	ld s11, 96(sp)
+	addi sp, sp, 13*8
 	ret
 
 

@@ -27,8 +27,7 @@ void do_scheduler()
 		Thread *next_thread = ready_queue.front();
 		ready_queue.pop();
 		next_thread->status = Thread::TASK_RUNNING;
-		current_running = next_thread;
-		switch_context_entry(from_thread->kernel_context.regs, next_thread->kernel_context.regs);
+		switch_context_entry(next_thread);
 	}
 }
 void add_ready_thread(Thread *thread)
