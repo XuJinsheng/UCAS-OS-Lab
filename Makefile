@@ -35,7 +35,8 @@ MINICOM         = minicom
 # -----------------------------------------------------------------------
 
 CFLAGS          = -O2 -fno-builtin -nostdlib -nostdinc -Wall -mcmodel=medany -ggdb3
-CXXFLAGS        = -O0 -std=c++20 -Wall -mcmodel=medany -ggdb3 -fno-builtin -nostdlib -ffreestanding -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics
+CXXFLAGS        = -O0 -std=c++20 -Wall -mcmodel=medany -ggdb3 -fno-builtin -nostdlib 
+CXXFLAGS       += -fkeep-inline-functions -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics -ffreestanding
 
 BOOT_INCLUDE    = -I$(DIR_KERNEL)/arch
 BOOT_CFLAGS     = $(BOOT_INCLUDE) -Wl,--defsym=TEXT_START=$(BOOTLOADER_ENTRYPOINT) -T riscv.lds
@@ -95,6 +96,8 @@ OBJ_CRT0    = $(DIR_BUILD)/$(notdir $(SRC_CRT0:.S=.o))
 
 SRC_LIBC    = $(wildcard ./tiny_libc/*.c)
 OBJ_LIBC    = $(patsubst %.c, %.o, $(foreach file, $(SRC_LIBC), $(DIR_BUILD)/$(notdir $(file))))
+SRC_LIBS    = $(wildcard ./tiny_libc/*.S)
+OBJ_LIBS    = $(patsubst %.S, %.o, $(foreach file, $(SRC_LIBS), $(DIR_BUILD)/$(notdir $(file))))
 LIB_TINYC   = $(DIR_BUILD)/libtinyc.a
 
 SRC_USER    = $(wildcard $(DIR_TEST_PROJ)/*.c)
@@ -157,10 +160,13 @@ $(ELF_MAIN): $(SRC_MAIN) riscv.lds
 $(OBJ_CRT0): $(SRC_CRT0)
 	$(CC) $(CFLAGS) $(USER_CFLAGS) -I$(DIR_ARCH)/include -c $< -o $@
 
-$(LIB_TINYC): $(OBJ_LIBC)
+$(LIB_TINYC): $(OBJ_LIBC) $(OBJ_LIBS)
 	$(AR) rcs $@ $^
 
 $(DIR_BUILD)/%.o: $(DIR_TINYLIBC)/%.c
+	$(CC) $(CFLAGS) $(USER_CFLAGS) -c $< -o $@
+
+$(DIR_BUILD)/%.o: $(DIR_TINYLIBC)/%.S
 	$(CC) $(CFLAGS) $(USER_CFLAGS) -c $< -o $@
 
 $(DIR_BUILD)/%: $(DIR_TEST_PROJ)/%.c $(OBJ_CRT0) $(LIB_TINYC) riscv.lds
