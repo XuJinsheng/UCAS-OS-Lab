@@ -62,11 +62,15 @@ user_trap_entry:
 	la t1, kernel_trap_entry
 	csrw stvec, t1
 
-	call user_trap_handler
+	la a0, 0// from_kernel=false
+	csrr a1, scause
+	csrr a2, stval
+	call trap_handler
 
 user_trap_return:# return to user space, kernel stack is clear
 	mv x31, tp
 	csrw sscratch, tp
+	// TODO: check SPP
 	ld t0, (USER_BASE+256)(x31)
 	csrw sepc, t0
 	la t0, user_trap_entry
@@ -107,7 +111,58 @@ user_trap_return:# return to user space, kernel stack is clear
 
 
 kernel_trap_entry:
-	.word 0
+	ebreak
+	addi sp, sp, -18*8
+	sd ra, 0(sp)
+	sd t0, 8(sp)
+	sd t1, 16(sp)
+	sd t2, 24(sp)
+	sd t3, 32(sp)
+	sd t4, 40(sp)
+	sd t5, 48(sp)
+	sd t6, 56(sp)
+	sd a0, 64(sp)
+	sd a1, 72(sp)
+	sd a2, 80(sp)
+	sd a3, 88(sp)
+	sd a4, 96(sp)
+	sd a5, 104(sp)
+	sd a6, 112(sp)
+	sd a7, 120(sp)
+	csrr t0, sepc
+	sd t0, 128(sp)
+	csrr t0, sstatus
+	sd t0, 136(sp)
+
+
+	li a0,1//from_kernel=true
+	csrr a1,scause
+	csrr a2,stval
+	call trap_handler
+
+	//TODO: check SPP
+	ld t0, 128(sp)
+	csrw sepc, t0
+	ld t0, 136(sp)
+	csrw sstatus, t0
+
+	ld ra, 0(sp)
+	ld t0, 8(sp)
+	ld t1, 16(sp)
+	ld t2, 24(sp)
+	ld t3, 32(sp)
+	ld t4, 40(sp)
+	ld t5, 48(sp)
+	ld t6, 56(sp)
+	ld a0, 64(sp)
+	ld a1, 72(sp)
+	ld a2, 80(sp)
+	ld a3, 88(sp)
+	ld a4, 96(sp)
+	ld a5, 104(sp)
+	ld a6, 112(sp)
+	ld a7, 120(sp)
+	addi sp, sp, 18*8
 	sret
 
 # void switch_context_entry(Thread* to);
@@ -127,6 +182,7 @@ switch_context_entry:
 	sd s10, 88(sp)
 	sd s11, 96(sp)
 	sd sp,(USER_BASE+280)(tp)
+
 	mv tp,a0
 	ld sp, (USER_BASE+280)(tp)
 	ld ra, 0(sp)

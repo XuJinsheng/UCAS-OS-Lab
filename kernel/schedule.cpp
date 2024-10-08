@@ -10,6 +10,7 @@ std::queue<Thread*> ready_queue;
 
 void do_scheduler()
 {
+	// check SIE clear
 	if (current_running->status == Thread::TASK_RUNNING)
 	{
 		current_running->status = Thread::TASK_READY;

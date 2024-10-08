@@ -9,6 +9,7 @@
 
 void init_trap()
 {
+	csr_clear(CSR_SIE, SIE_SEIE | SIE_STIE | SIE_SSIE);
 	csr_clear(CSR_SSTATUS, SR_SPP);
 	csr_set(CSR_SSTATUS, SR_SPIE);
 	csr_write(CSR_STVEC, user_trap_entry);
@@ -33,10 +34,10 @@ void handle_other(user_context_reg_t *regs)
 	assert(0);
 }
 
-void user_trap_handler()
+void trap_handler(int from_kernel, ptr_t scause, ptr_t stval)
 {
 	user_context_reg_t &regs = current_running->user_context;
-	switch (regs.scause)
+	switch (scause)
 	{
 	case EXC_SYSCALL: {
 		ptr_t res = handle_syscall(regs.regs + 9);

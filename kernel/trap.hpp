@@ -2,8 +2,7 @@
 
 #include <common.h>
 
-
-__BEGIN_DECLS
 void init_trap();
-void user_trap_handler();
+__BEGIN_DECLS
+void trap_handler(int from_kernel, ptr_t scause, ptr_t stval);
 __END_DECLS
