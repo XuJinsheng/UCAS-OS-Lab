@@ -62,10 +62,10 @@ void Syscall::sleep(uint32_t time)
 
 void enable_preempt()
 {
-	csr_set(CSR_SIE, SIE_SEIE | SIE_STIE | SIE_SSIE);
+	csr_set(CSR_SSTATUS, SR_SIE);
 }
 
 void disable_preempt()
 {
-	csr_clear(CSR_SIE, 0x0);
+	csr_clear(CSR_SSTATUS, SR_SIE);
 }

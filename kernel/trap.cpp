@@ -10,10 +10,9 @@
 
 void init_trap()
 {
-	csr_clear(CSR_SIE, SIE_SEIE | SIE_STIE | SIE_SSIE);
-	csr_clear(CSR_SSTATUS, SR_SPP);
-	csr_set(CSR_SSTATUS, SR_SPIE);
-	csr_set(CSR_SSTATUS, SR_SIE);
+	csr_clear(CSR_SSTATUS, SR_SIE);
+	csr_clear(CSR_SSTATUS, SR_SPIE);
+	csr_set(CSR_SIE, SIE_SEIE | SIE_STIE | SIE_SSIE);
 	csr_write(CSR_STVEC, kernel_trap_entry);
 }
 
