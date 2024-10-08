@@ -70,7 +70,7 @@ user_trap_entry:
 user_trap_return:# return to user space, kernel stack is clear
 	mv x31, tp
 	csrw sscratch, tp
-	li t0, 1<<8// set sstatus.SPP=user mode
+	li t0, 1<<8	// set sstatus.SPP=user mode
 	csrc sstatus, t0
 	ld t0, (USER_BASE+256)(x31)
 	csrw sepc, t0
@@ -140,7 +140,8 @@ kernel_trap_entry:
 	csrr a2,stval
 	call trap_handler
 
-	//TODO: check SPP
+	li t0, 1<<8	// set sstatus.SPP=kernel mode
+	csrc sstatus, t0
 	ld t0, 128(sp)
 	csrw sepc, t0
 	ld t0, 136(sp)
@@ -167,7 +168,7 @@ kernel_trap_entry:
 
 # void switch_context_entry(Thread* to);
 switch_context_entry:
-	addi sp, sp, -13*8
+	addi sp, sp, -14*8	// 14 is related to Thread construction
 	sd ra, 0(sp)
 	sd s0, 8(sp)
 	sd s1, 16(sp)
@@ -182,12 +183,12 @@ switch_context_entry:
 	sd s10, 88(sp)
 	sd s11, 96(sp)
 	ld s1, (USER_BASE+280)(tp)
-	sd s1, (USER_BASE+288)(tp)
+	sd s1, 104(sp)
 	sd sp, (USER_BASE+280)(tp)
 
 	mv tp,a0
 	ld sp, (USER_BASE+280)(tp)
-	ld ra, (USER_BASE+288)(tp)
+	ld ra, 104(sp)
 	sd ra, (USER_BASE+280)(tp)
 	ld ra, 0(sp)
 	ld s0, 8(sp)
@@ -202,7 +203,7 @@ switch_context_entry:
 	ld s9, 80(sp)
 	ld s10, 88(sp)
 	ld s11, 96(sp)
-	addi sp, sp, 13*8
+	addi sp, sp, 14*8
 	ret
 
 
