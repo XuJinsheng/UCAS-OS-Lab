@@ -15,7 +15,8 @@ class Thread
 public:
 	// fixed for asm
 	user_context_reg_t user_context;
-	ptr_t kernel_stack_top; // offset 280
+	ptr_t kernel_stack_top;		// offset 280
+	ptr_t old_kernel_stack_top; // offset 288
 
 	int cursor_x, cursor_y;
 	int pid;
@@ -35,7 +36,7 @@ public:
 	Thread(const Thread &) = delete;
 	Thread &operator=(const Thread &) = delete;
 };
-static_assert(offsetof(Thread, kernel_stack_top) == 280, "Thread layout for asm error");
+static_assert(offsetof(Thread, old_kernel_stack_top) == 288, "Thread layout for asm error");
 
 extern void init_pcb();
 register Thread *current_running asm("tp");

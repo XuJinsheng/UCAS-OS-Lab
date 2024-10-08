@@ -181,10 +181,14 @@ switch_context_entry:
 	sd s9, 80(sp)
 	sd s10, 88(sp)
 	sd s11, 96(sp)
-	sd sp,(USER_BASE+280)(tp)
+	ld s1, (USER_BASE+280)(tp)
+	sd s1, (USER_BASE+288)(tp)
+	sd sp, (USER_BASE+280)(tp)
 
 	mv tp,a0
 	ld sp, (USER_BASE+280)(tp)
+	ld ra, (USER_BASE+288)(tp)
+	sd ra, (USER_BASE+280)(tp)
 	ld ra, 0(sp)
 	ld s0, 8(sp)
 	ld s1, 16(sp)

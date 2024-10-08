@@ -5,6 +5,7 @@
 #include <kstdio.h>
 #include <syscall.hpp>
 #include <thread.hpp>
+#include <time.hpp>
 #include <trap.hpp>
 
 void init_trap()
@@ -39,12 +40,13 @@ void trap_handler(int from_kernel, ptr_t scause, ptr_t stval)
 	user_context_reg_t &regs = current_running->user_context;
 	switch (scause)
 	{
-	case EXC_SYSCALL: {
-		ptr_t res = handle_syscall(regs.regs + 9);
-		regs.regs[9] = res;
+	case EXC_SYSCALL:
+		regs.regs[9] = handle_syscall(regs.regs + 9);
 		regs.sepc += 4;
 		break;
-	}
+	case SCAUSE_IRQ_FLAG | IRQ_S_TIMER:
+		handle_irq_timer();
+		break;
 	default:
 		handle_other(&regs);
 		break;

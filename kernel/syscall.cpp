@@ -69,20 +69,6 @@ void Syscall::reflush(void)
 	screen_reflush();
 }
 
-long Syscall::get_timebase(void)
-{
-	return 0;
-}
-
-long Syscall::get_tick(void)
-{
-	return 0;
-}
-
-void Syscall::sleep(uint32_t time)
-{
-}
-
 void Syscall::set_sche_workload(int workload)
 {
 }

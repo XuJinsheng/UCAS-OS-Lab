@@ -7,6 +7,7 @@
 #include <syscall.hpp>
 #include <task_loader.hpp>
 #include <thread.hpp>
+#include <time.hpp>
 #include <trap.hpp>
 
 extern func_t __preinit_array_start[0], __preinit_array_end[0], __init_array_start[0], __init_array_end[0];
@@ -29,7 +30,7 @@ int main(void)
 	printk("> [INIT] PCB initialization succeeded.\n");
 
 	// Read CPU frequency (｡•ᴗ-)_
-	// time_base = bios_read_fdt(TIMEBASE);
+	init_timer();
 
 	// Init lock mechanism o(´^｀)o
 	init_locks();
@@ -52,11 +53,11 @@ int main(void)
 
 	// TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
 	//   and then execute them.
-	add_ready_thread(new Thread(load_task_img_by_name("print1")));
-	add_ready_thread(new Thread(load_task_img_by_name("print2")));
-	add_ready_thread(new Thread(load_task_img_by_name("fly")));
-	add_ready_thread(new Thread(load_task_img_by_name("lock1")));
-	add_ready_thread(new Thread(load_task_img_by_name("lock2")));
+	const char *task_names[] = {"print1", "print2", "lock1", "lock2", "fly", "sleep", "timer"};
+	for (auto name : task_names)
+	{
+		add_ready_thread(new Thread(load_task_img_by_name(name)));
+	}
 
 	// Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
 	while (1)
