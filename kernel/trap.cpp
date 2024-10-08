@@ -13,7 +13,8 @@ void init_trap()
 	csr_clear(CSR_SIE, SIE_SEIE | SIE_STIE | SIE_SSIE);
 	csr_clear(CSR_SSTATUS, SR_SPP);
 	csr_set(CSR_SSTATUS, SR_SPIE);
-	csr_write(CSR_STVEC, user_trap_entry);
+	csr_set(CSR_SSTATUS, SR_SIE);
+	csr_write(CSR_STVEC, kernel_trap_entry);
 }
 
 void handle_other(user_context_reg_t *regs)

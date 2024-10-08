@@ -70,7 +70,8 @@ user_trap_entry:
 user_trap_return:# return to user space, kernel stack is clear
 	mv x31, tp
 	csrw sscratch, tp
-	// TODO: check SPP
+	li t0, 1<<8// set sstatus.SPP=user mode
+	csrc sstatus, t0
 	ld t0, (USER_BASE+256)(x31)
 	csrw sepc, t0
 	la t0, user_trap_entry
@@ -111,7 +112,6 @@ user_trap_return:# return to user space, kernel stack is clear
 
 
 kernel_trap_entry:
-	ebreak
 	addi sp, sp, -18*8
 	sd ra, 0(sp)
 	sd t0, 8(sp)

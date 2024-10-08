@@ -1,4 +1,5 @@
 #define _NEW
+#include <arch/CSR.h>
 #include <arch/trap_entry.h>
 #include <assert.h>
 #include <common.h>
@@ -57,4 +58,14 @@ void Syscall::sleep(uint32_t time)
 	sleeping_queue.push_back((Thread *)current_running);
 	current_running->status = Thread::TASK_BLOCKED;
 	do_scheduler();
+}
+
+void enable_preempt()
+{
+	csr_set(CSR_SIE, SIE_SEIE | SIE_STIE | SIE_SSIE);
+}
+
+void disable_preempt()
+{
+	csr_clear(CSR_SIE, 0x0);
 }
