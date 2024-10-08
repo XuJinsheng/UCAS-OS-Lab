@@ -1,6 +1,7 @@
 #include <asm.h>
 
 .equ USER_BASE, 0
+.equ KERNEL_STACK_IN_THREAD, 280
 
 .section .text
 .globl init_trap
@@ -11,56 +12,55 @@
 
 
 .balign 4
-
 user_trap_entry:
-	csrrw x31,sscratch,x31
-	// x31 = current_running
-	sd x1, (USER_BASE+0)(x31)
-	sd x2, (USER_BASE+8)(x31)
-	sd x3, (USER_BASE+16)(x31)
-	sd x4, (USER_BASE+24)(x31)
-	sd x5, (USER_BASE+32)(x31)
-	sd x6, (USER_BASE+40)(x31)
-	sd x7, (USER_BASE+48)(x31)
-	sd x8, (USER_BASE+56)(x31)
-	sd x9, (USER_BASE+64)(x31)
-	sd x10, (USER_BASE+72)(x31)
-	sd x11, (USER_BASE+80)(x31)
-	sd x12, (USER_BASE+88)(x31)
-	sd x13, (USER_BASE+96)(x31)
-	sd x14, (USER_BASE+104)(x31)
-	sd x15, (USER_BASE+112)(x31)
-	sd x16, (USER_BASE+120)(x31)
-	sd x17, (USER_BASE+128)(x31)
-	sd x18, (USER_BASE+136)(x31)
-	sd x19, (USER_BASE+144)(x31)
-	sd x20, (USER_BASE+152)(x31)
-	sd x21, (USER_BASE+160)(x31)
-	sd x22, (USER_BASE+168)(x31)
-	sd x23, (USER_BASE+176)(x31)
-	sd x24, (USER_BASE+184)(x31)
-	sd x25, (USER_BASE+192)(x31)
-	sd x26, (USER_BASE+200)(x31)
-	sd x27, (USER_BASE+208)(x31)
-	sd x28, (USER_BASE+216)(x31)
-	sd x29, (USER_BASE+224)(x31)
-	sd x30, (USER_BASE+232)(x31)
-	csrr t0, sscratch
-	sd t0, (USER_BASE+240)(x31)
-	csrr t0, sstatus
-	sd t0, (USER_BASE+248)(x31)
-	csrr t0, sepc
-	sd t0, (USER_BASE+256)(x31)
-	csrr t0, scause
-	sd t0, (USER_BASE+264)(x31)
-	csrr t0, stval
-	sd t0, (USER_BASE+272)(x31)
+	csrrw sp,sscratch,sp
+	// sp = current_running
+	sd x1, (USER_BASE+0)(sp)
+	sd x3, (USER_BASE+16)(sp)
+	sd x4, (USER_BASE+24)(sp)
+	sd x5, (USER_BASE+32)(sp)
+	sd x6, (USER_BASE+40)(sp)
+	sd x7, (USER_BASE+48)(sp)
+	sd x8, (USER_BASE+56)(sp)
+	sd x9, (USER_BASE+64)(sp)
+	sd x10, (USER_BASE+72)(sp)
+	sd x11, (USER_BASE+80)(sp)
+	sd x12, (USER_BASE+88)(sp)
+	sd x13, (USER_BASE+96)(sp)
+	sd x14, (USER_BASE+104)(sp)
+	sd x15, (USER_BASE+112)(sp)
+	sd x16, (USER_BASE+120)(sp)
+	sd x17, (USER_BASE+128)(sp)
+	sd x18, (USER_BASE+136)(sp)
+	sd x19, (USER_BASE+144)(sp)
+	sd x20, (USER_BASE+152)(sp)
+	sd x21, (USER_BASE+160)(sp)
+	sd x22, (USER_BASE+168)(sp)
+	sd x23, (USER_BASE+176)(sp)
+	sd x24, (USER_BASE+184)(sp)
+	sd x25, (USER_BASE+192)(sp)
+	sd x26, (USER_BASE+200)(sp)
+	sd x27, (USER_BASE+208)(sp)
+	sd x28, (USER_BASE+216)(sp)
+	sd x29, (USER_BASE+224)(sp)
+	sd x30, (USER_BASE+232)(sp)
+	sd x31, (USER_BASE+240)(sp)
+	csrr a0, sscratch
+	sd a0, (USER_BASE+8)(sp)
+	csrr a0, sstatus
+	sd a0, (USER_BASE+248)(sp)
+	csrr a0, sepc
+	sd a0, (USER_BASE+256)(sp)
+	csrr a0, scause
+	sd a0, (USER_BASE+264)(sp)
+	csrr a0, stval
+	sd a0, (USER_BASE+272)(sp)
 
-	mv tp, x31//current_running
-	ld sp, (USER_BASE+280)(x31)//kernel_stack_top
+	mv tp, sp//current_running
+	ld sp, KERNEL_STACK_IN_THREAD(sp)//kernel_stack_top
 
-	la t1, kernel_trap_entry
-	csrw stvec, t1
+	la a0, kernel_trap_entry
+	csrw stvec, a0
 
 	la a0, 0// from_kernel=false
 	csrr a1, scause
@@ -68,49 +68,49 @@ user_trap_entry:
 	call trap_handler
 
 user_trap_return:# return to user space, kernel stack is clear
-	mv x31, tp
+	mv sp, tp
 	csrw sscratch, tp
-	li t0, 1<<8	// set sstatus.SPP=user mode
-	csrc sstatus, t0
-	ld t0, (USER_BASE+256)(x31)
-	csrw sepc, t0
-	la t0, user_trap_entry
-	csrw stvec, t0
+	li a0, 1<<8// set sstatus.SPP=user mode
+	csrc sstatus, a0
+	ld a0, (USER_BASE+256)(sp)
+	csrw sepc, a0
+	la a0, user_trap_entry
+	csrw stvec, a0
 
-	ld x1, (USER_BASE+0)(x31)
-	ld x2, (USER_BASE+8)(x31)
-	ld x3, (USER_BASE+16)(x31)
-	ld x4, (USER_BASE+24)(x31)
-	ld x5, (USER_BASE+32)(x31)
-	ld x6, (USER_BASE+40)(x31)
-	ld x7, (USER_BASE+48)(x31)
-	ld x8, (USER_BASE+56)(x31)
-	ld x9, (USER_BASE+64)(x31)
-	ld x10, (USER_BASE+72)(x31)
-	ld x11, (USER_BASE+80)(x31)
-	ld x12, (USER_BASE+88)(x31)
-	ld x13, (USER_BASE+96)(x31)
-	ld x14, (USER_BASE+104)(x31)
-	ld x15, (USER_BASE+112)(x31)
-	ld x16, (USER_BASE+120)(x31)
-	ld x17, (USER_BASE+128)(x31)
-	ld x18, (USER_BASE+136)(x31)
-	ld x19, (USER_BASE+144)(x31)
-	ld x20, (USER_BASE+152)(x31)
-	ld x21, (USER_BASE+160)(x31)
-	ld x22, (USER_BASE+168)(x31)
-	ld x23, (USER_BASE+176)(x31)
-	ld x24, (USER_BASE+184)(x31)
-	ld x25, (USER_BASE+192)(x31)
-	ld x26, (USER_BASE+200)(x31)
-	ld x27, (USER_BASE+208)(x31)
-	ld x28, (USER_BASE+216)(x31)
-	ld x29, (USER_BASE+224)(x31)
-	ld x30, (USER_BASE+232)(x31)
-	ld x31, (USER_BASE+240)(x31)
+	ld x1, (USER_BASE+0)(sp)
+	ld x3, (USER_BASE+16)(sp)
+	ld x4, (USER_BASE+24)(sp)
+	ld x5, (USER_BASE+32)(sp)
+	ld x6, (USER_BASE+40)(sp)
+	ld x7, (USER_BASE+48)(sp)
+	ld x8, (USER_BASE+56)(sp)
+	ld x9, (USER_BASE+64)(sp)
+	ld x10, (USER_BASE+72)(sp)
+	ld x11, (USER_BASE+80)(sp)
+	ld x12, (USER_BASE+88)(sp)
+	ld x13, (USER_BASE+96)(sp)
+	ld x14, (USER_BASE+104)(sp)
+	ld x15, (USER_BASE+112)(sp)
+	ld x16, (USER_BASE+120)(sp)
+	ld x17, (USER_BASE+128)(sp)
+	ld x18, (USER_BASE+136)(sp)
+	ld x19, (USER_BASE+144)(sp)
+	ld x20, (USER_BASE+152)(sp)
+	ld x21, (USER_BASE+160)(sp)
+	ld x22, (USER_BASE+168)(sp)
+	ld x23, (USER_BASE+176)(sp)
+	ld x24, (USER_BASE+184)(sp)
+	ld x25, (USER_BASE+192)(sp)
+	ld x26, (USER_BASE+200)(sp)
+	ld x27, (USER_BASE+208)(sp)
+	ld x28, (USER_BASE+216)(sp)
+	ld x29, (USER_BASE+224)(sp)
+	ld x30, (USER_BASE+232)(sp)
+	ld x31, (USER_BASE+240)(sp)
+	ld x2, (USER_BASE+8)(sp)
 	sret
 
-
+.balign 4
 kernel_trap_entry:
 	addi sp, sp, -18*8
 	sd ra, 0(sp)
@@ -129,10 +129,10 @@ kernel_trap_entry:
 	sd a5, 104(sp)
 	sd a6, 112(sp)
 	sd a7, 120(sp)
-	csrr t0, sepc
-	sd t0, 128(sp)
-	csrr t0, sstatus
-	sd t0, 136(sp)
+	csrr a0, sepc
+	sd a0, 128(sp)
+	csrr a0, sstatus
+	sd a0, 136(sp)
 
 
 	li a0,1//from_kernel=true
@@ -140,12 +140,12 @@ kernel_trap_entry:
 	csrr a2,stval
 	call trap_handler
 
-	li t0, 1<<8	// set sstatus.SPP=kernel mode
-	csrc sstatus, t0
-	ld t0, 128(sp)
-	csrw sepc, t0
-	ld t0, 136(sp)
-	csrw sstatus, t0
+	li a0, 1<<8	// set sstatus.SPP=kernel mode
+	csrc sstatus, a0
+	ld a0, 128(sp)
+	csrw sepc, a0
+	ld a0, 136(sp)
+	csrw sstatus, a0
 
 	ld ra, 0(sp)
 	ld t0, 8(sp)
@@ -167,6 +167,7 @@ kernel_trap_entry:
 	sret
 
 # void switch_context_entry(Thread* to);
+.balign 4
 switch_context_entry:
 	addi sp, sp, -14*8	// 14 is related to Thread construction
 	sd ra, 0(sp)
@@ -182,14 +183,14 @@ switch_context_entry:
 	sd s9, 80(sp)
 	sd s10, 88(sp)
 	sd s11, 96(sp)
-	ld s1, (USER_BASE+280)(tp)
-	sd s1, 104(sp)
-	sd sp, (USER_BASE+280)(tp)
+	ld s0, KERNEL_STACK_IN_THREAD(tp)
+	sd s0, 104(sp)
+	sd sp, KERNEL_STACK_IN_THREAD(tp)
 
 	mv tp,a0
-	ld sp, (USER_BASE+280)(tp)
-	ld ra, 104(sp)
-	sd ra, (USER_BASE+280)(tp)
+	ld sp, KERNEL_STACK_IN_THREAD(tp)
+	ld s0, 104(sp)
+	sd s0, KERNEL_STACK_IN_THREAD(tp)
 	ld ra, 0(sp)
 	ld s0, 8(sp)
 	ld s1, 16(sp)
