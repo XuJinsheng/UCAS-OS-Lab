@@ -9,6 +9,7 @@ uint64_t time_base = 0;
 
 void init_timer()
 {
+	bios_set_timer(get_ticks());
 	time_base = bios_read_fdt(TIMEBASE);
 }
 uint64_t get_ticks()
