@@ -35,7 +35,7 @@ MINICOM         = minicom
 # -----------------------------------------------------------------------
 
 CFLAGS          = -O2 -fno-builtin -nostdlib -nostdinc -Wall -mcmodel=medany -ggdb3
-CXXFLAGS        = -O0 -std=c++20 -Wall -mcmodel=medany -ggdb3 -fno-builtin -nostdlib 
+CXXFLAGS        = -O2 -std=c++20 -Wall -mcmodel=medany -ggdb3 -fno-builtin -nostdlib 
 CXXFLAGS       += -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics
 
 BOOT_INCLUDE    = -I$(DIR_KERNEL)/arch
