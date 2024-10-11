@@ -1,5 +1,3 @@
-#include <asm.h>
-
 .equ USER_BASE, 0
 .equ KERNEL_STACK_IN_THREAD, 280
 

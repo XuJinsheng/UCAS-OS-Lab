@@ -2,7 +2,6 @@
 #define INCLUDE_PRINTK_H_
 
 #include <common.h>
-#include <stdarg.h>
 __BEGIN_DECLS
 
 char getchar();

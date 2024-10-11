@@ -44,5 +44,6 @@ inline void *operator new[](size_t, void *place)
 #include <algorithm>
 #include <ranges>
 
+#include <atomic>
 #endif
 #endif

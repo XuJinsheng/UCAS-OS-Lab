@@ -3,12 +3,12 @@
  * Copyright (C) 2012 Regents of the University of California
  */
 
-#include <asm.h>
-
-#define KERNEL_STACK		0x50500000
+.set KERNEL_STACK, 0x50500000
 
 .section ".entry_function","ax"
-ENTRY(_start)
+.globl _start
+.balign 4
+_start:
 	/* Mask all interrupts */
 	csrw sie, zero
 	csrw sie, zero
@@ -35,4 +35,4 @@ loop:
 	wfi
 	j loop
 
-END(_start)
+

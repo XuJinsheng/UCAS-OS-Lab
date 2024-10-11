@@ -19,7 +19,7 @@ ptr_t handle_syscall(const ptr_t args[8]);
 
 namespace Syscall
 {
-    
+
 void yield(void);
 
 void move_cursor(int x, int y);
@@ -42,4 +42,4 @@ void sleep(uint32_t time);
 
 void set_sche_workload(int workload);
 
-}
+} // namespace Syscall

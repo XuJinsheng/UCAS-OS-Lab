@@ -1,6 +1,5 @@
-#define _NEW
-#undef _GLIBCXX_HOSTED
-#include <atomic>
+#pragma once
+#include <common.h>
 
 // Used in multi-core environment
 class SpinLock

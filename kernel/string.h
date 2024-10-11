@@ -2,7 +2,6 @@
 #define INCLUDE_STRING_H_
 
 #include <common.h>
-#include <stdarg.h>
 #include <stdint.h>
 
 __BEGIN_DECLS
