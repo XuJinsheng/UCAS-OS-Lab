@@ -40,7 +40,6 @@ void do_scheduler()
 	}
 	else
 	{
-		Thread *from_thread = current_running;
 		Thread *next_thread = ready_queue.front();
 		ready_queue.pop();
 		next_thread->status = Thread::TASK_RUNNING;
