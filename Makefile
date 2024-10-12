@@ -62,7 +62,7 @@ QEMU_DEBUG_OPT  = -s -S
 
 DIR_BUILD       = ./build
 DIR_BOOTLOADER 	= ./bootloader
-DIR_KERNEL      = ./kernel
+DIR_KERNEL      = ./src
 DIR_TINYLIBC    = ./tiny_libc
 DIR_TEST        = ./test
 DIR_TEST_PROJ   = $(DIR_TEST)/test_project$(PROJECT_IDX)
