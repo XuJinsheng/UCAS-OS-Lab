@@ -19,6 +19,8 @@
 main:
 	// fence on all memory and I/O
 	fence
+    // a0 is mhartid
+	// bnez a0, secondary
 
 	// TODO: [p1-task1] call BIOS to print string "It's bootblock!"
 	la a0,msg

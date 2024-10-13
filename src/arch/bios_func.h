@@ -89,7 +89,10 @@ uint64_t bios_read_fdt(enum FDT_TYPE type);
 // write debug information to logfile, this function is realized via qemu dump
 // use bios logging function
 void bios_logging(const char *str);
-/************************************************************/
 
+// send Inter-Processor Interrupts(IPI)
+// use bios send ipi function
+void send_ipi(const unsigned long *hart_mask);
+/************************************************************/
 __END_DECLS
 #endif

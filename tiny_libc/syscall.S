@@ -21,8 +21,35 @@ DEFINE_SYSCALL(sys_get_tick, SYSCALL_GET_TICK)
 DEFINE_SYSCALL(sys_mutex_init, SYSCALL_MUTEX_INIT)
 DEFINE_SYSCALL(sys_mutex_acquire, SYSCALL_MUTEX_ACQ)
 DEFINE_SYSCALL(sys_mutex_release, SYSCALL_MUTEX_RELEASE)
-DEFINE_SYSCALL(sys_set_sche_workload, SYSCALL_SET_SCHE_WORKLOAD)
 
+
+.globl sys_getchar
+.balign 4
+sys_getchar:
+1:
+	li a7, SYSCALL_READCH
+	ecall
+	li a1, -1
+	beq a0, a1, 1b
+	ret
+DEFINE_SYSCALL(sys_ps, SYSCALL_PS)
+DEFINE_SYSCALL(sys_exec, SYSCALL_EXEC)
+DEFINE_SYSCALL(sys_exit, SYSCALL_EXIT)
+DEFINE_SYSCALL(sys_kill, SYSCALL_KILL)
+DEFINE_SYSCALL(sys_waitpid, SYSCALL_WAITPID)
+DEFINE_SYSCALL(sys_getpid, SYSCALL_GETPID)
+DEFINE_SYSCALL(sys_barrier_init, SYSCALL_BARR_INIT)
+DEFINE_SYSCALL(sys_barrier_wait, SYSCALL_BARR_WAIT)
+DEFINE_SYSCALL(sys_barrier_destroy, SYSCALL_BARR_DESTROY)
+DEFINE_SYSCALL(sys_condition_init, SYSCALL_COND_INIT)
+DEFINE_SYSCALL(sys_condition_wait, SYSCALL_COND_WAIT)
+DEFINE_SYSCALL(sys_condition_signal, SYSCALL_COND_SIGNAL)
+DEFINE_SYSCALL(sys_condition_broadcast, SYSCALL_COND_BROADCAST)
+DEFINE_SYSCALL(sys_condition_destroy, SYSCALL_COND_DESTROY)
+DEFINE_SYSCALL(sys_mbox_open, SYSCALL_MBOX_OPEN)
+DEFINE_SYSCALL(sys_mbox_close, SYSCALL_MBOX_CLOSE)
+DEFINE_SYSCALL(sys_mbox_send, SYSCALL_MBOX_SEND)
+DEFINE_SYSCALL(sys_mbox_recv, SYSCALL_MBOX_RECV)
 
 
 /************************************************************/
