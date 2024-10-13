@@ -212,3 +212,8 @@ void *allocUserPage(int numPage)
 {
 	return upage->alloc(numPage * 4096);
 }
+
+void freeUserPage(void *ptr)
+{
+	upage->free(ptr);
+}

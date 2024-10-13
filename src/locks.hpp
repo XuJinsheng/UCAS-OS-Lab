@@ -2,5 +2,4 @@
 
 #include <common.h>
 
-extern void	init_locks();
-
+extern void init_locks();

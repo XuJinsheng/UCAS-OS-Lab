@@ -10,25 +10,24 @@
 #include <time.hpp>
 
 std::queue<Thread *> ready_queue;
-std::vector<Thread *> sleeping_queue;
+using SleepItem = std::pair<uint64_t, Thread *>;
+std::priority_queue<SleepItem, std::vector<SleepItem>, std::greater<SleepItem>> sleeping_queue;
 void check_sleeping()
 {
 	uint64_t current_time = get_timer();
-	auto it = std::ranges::remove_if(sleeping_queue,
-									 [current_time](Thread *thread) { return thread->wakeup_time <= current_time; });
-	for (Thread *t : it)
+	while (!sleeping_queue.empty() && sleeping_queue.top().first < current_time)
 	{
-		t->status = Thread::TASK_READY;
-		add_ready_thread(t);
+		Thread *t = sleeping_queue.top().second;
+		sleeping_queue.pop();
+		t->wakeup();
 	}
-	sleeping_queue.erase(it.begin(), it.end());
 }
 void do_scheduler()
 {
 	// check SIE clear
-	if (current_running->status == Thread::TASK_RUNNING)
+	if (current_running->status == Thread::Status::RUNNING)
 	{
-		current_running->status = Thread::TASK_READY;
+		current_running->status = Thread::Status::READY;
 		add_ready_thread(current_running);
 	}
 	check_sleeping();
@@ -42,7 +41,7 @@ void do_scheduler()
 	{
 		Thread *next_thread = ready_queue.front();
 		ready_queue.pop();
-		next_thread->status = Thread::TASK_RUNNING;
+		next_thread->status = Thread::Status::RUNNING;
 		switch_context_entry(next_thread);
 	}
 }
@@ -53,9 +52,9 @@ void add_ready_thread(Thread *thread)
 
 void Syscall::sleep(uint32_t time)
 {
-	current_running->wakeup_time = get_timer() + time;
-	sleeping_queue.push_back((Thread *)current_running);
-	current_running->status = Thread::TASK_BLOCKED;
+	size_t wakeup_time = get_timer() + time;
+	sleeping_queue.push({wakeup_time, (Thread *)current_running});
+	current_running->block();
 	do_scheduler();
 }
 

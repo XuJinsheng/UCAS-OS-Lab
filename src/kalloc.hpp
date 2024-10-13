@@ -11,3 +11,4 @@ extern void kfree(void *ptr);
 #define PAGE_SIZE 4096 // 4K
 extern void *allocKernelPage(int numPage);
 extern void *allocUserPage(int numPage);
+extern void freeUserPage(void *ptr);

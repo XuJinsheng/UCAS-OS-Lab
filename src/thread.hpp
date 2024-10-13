@@ -9,6 +9,45 @@ struct user_context_reg_t
 	ptr_t scause;
 	ptr_t stval;
 };
+class Thread;
+
+class KernelObject
+{
+private:
+	size_t ref_count = 0;
+	friend Thread;
+
+public:
+	KernelObject() = default;
+	KernelObject(const KernelObject &) = delete;
+	KernelObject &operator=(const KernelObject &) = delete;
+	virtual ~KernelObject() = default;
+	virtual void on_thread_kill(Thread *)
+	{
+		ref_count--;
+		if (ref_count == 0)
+		{
+			delete this;
+		}
+	}
+};
+
+class WaitQueue
+{
+	std::queue<Thread *> que;
+
+public:
+	void push(Thread *t)
+	{
+		que.push(t);
+	}
+	Thread *wakeup_one();
+	void wakeup_all();
+	~WaitQueue()
+	{
+		wakeup_all();
+	}
+};
 
 class Thread
 {
@@ -20,20 +59,35 @@ public:
 	int cursor_x, cursor_y;
 	int pid;
 
-	enum
+	enum class Status
 	{
-		TASK_BLOCKED,
-		TASK_RUNNING,
-		TASK_READY,
-		TASK_EXITED,
+		BLOCKED,
+		RUNNING,
+		READY,
+		EXITED,
 	} status;
-
-	uint64_t wakeup_time;
+	Thread *parent;
+	std::vector<Thread *> children;
 
 	Thread(ptr_t start_address);
 	~Thread() = default;
 	Thread(const Thread &) = delete;
 	Thread &operator=(const Thread &) = delete;
+
+private:
+	std::queue<KernelObject *> kernel_objects;
+	std::queue<void *> user_memory;
+
+public:
+	void *alloc_user_memory(size_t size);
+	void add_kernel_object(KernelObject *obj)
+	{
+		obj->ref_count++;
+		kernel_objects.push(obj);
+	}
+	void block(); // need to be added to block queue manually
+	void wakeup();
+	void kill();
 };
 static_assert(offsetof(Thread, kernel_stack_top) == 280, "Thread layout for asm error");
 

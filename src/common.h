@@ -42,8 +42,7 @@ inline void *operator new[](size_t, void *place)
 
 #undef _GLIBCXX_HOSTED
 #include <algorithm>
-#include <ranges>
-
 #include <atomic>
+#include <ranges>
 #endif
 #endif
