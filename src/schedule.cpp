@@ -50,6 +50,11 @@ void add_ready_thread(Thread *thread)
 	ready_queue.push(thread);
 }
 
+void Syscall::yield(void)
+{
+	do_scheduler();
+}
+
 void Syscall::sleep(uint32_t time)
 {
 	size_t wakeup_time = get_timer() + time;
