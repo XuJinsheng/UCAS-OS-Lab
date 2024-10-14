@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Trie.hpp>
 #include <common.h>
 struct user_context_reg_t
 {
@@ -75,7 +76,7 @@ public:
 	Thread &operator=(const Thread &) = delete;
 
 private:
-	std::queue<KernelObject *> kernel_objects;
+	TrieLookup<KernelObject> kernel_objects;
 	std::queue<void *> user_memory;
 
 public:
@@ -84,7 +85,7 @@ public:
 	void add_kernel_object(KernelObject *obj)
 	{
 		obj->ref_count++;
-		kernel_objects.push(obj);
+		kernel_objects.insert((size_t)obj, obj);
 	}
 	void block(); // need to be added to block queue manually
 	void wakeup();

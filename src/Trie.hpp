@@ -32,7 +32,7 @@ public:
 			index = nodes[index].ch[x];
 			key >>= 1;
 		}
-		assert(nodes[index].val == nullptr);
+		assert(nodes[index].val == nullptr || nodes[index].val == val);
 		nodes[index].val = val;
 	}
 	T *lookup(size_t key)
@@ -60,5 +60,15 @@ public:
 			key >>= 1;
 		}
 		nodes[index].val = nullptr;
+	}
+	void foreach (auto f)
+	{
+		for (auto &node : nodes)
+		{
+			if (node.val)
+			{
+				f(node.val);
+			}
+		}
 	}
 };

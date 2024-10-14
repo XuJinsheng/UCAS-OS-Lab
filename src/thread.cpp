@@ -77,12 +77,7 @@ void Thread::kill()
 {
 	status = Status::EXITED;
 	wait_kill_queue.wakeup_all();
-	while (!kernel_objects.empty())
-	{
-		KernelObject *obj = kernel_objects.front();
-		kernel_objects.pop();
-		obj->on_thread_kill(this);
-	}
+	kernel_objects.foreach ([this](KernelObject *obj) { obj->on_thread_kill(this); });
 	if (parent != nullptr)
 	{
 		for (Thread *child : children)

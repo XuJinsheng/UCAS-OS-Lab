@@ -2,7 +2,6 @@
 #include <Trie.hpp>
 #include <assert.h>
 #include <common.h>
-#include <kalloc.hpp>
 #include <locks.hpp>
 #include <schedule.hpp>
 #include <spinlock.hpp>

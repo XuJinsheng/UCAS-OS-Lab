@@ -3,7 +3,6 @@
 #include <arch/trap_entry.h>
 #include <assert.h>
 #include <common.h>
-#include <kalloc.hpp>
 #include <schedule.hpp>
 #include <syscall.hpp>
 #include <thread.hpp>
