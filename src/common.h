@@ -37,7 +37,7 @@ inline void *operator new[](size_t, void *place)
 #include <bits/c++config.h>
 
 #include <queue>
-
+#include <string>
 #include <vector>
 
 #undef _GLIBCXX_HOSTED

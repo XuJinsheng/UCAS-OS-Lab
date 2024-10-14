@@ -45,7 +45,7 @@
 #include <kstdio.h>
 #include <stdarg.h>
 
-char getchar()
+int getchar()
 {
 	int ch = -1;
 	while (ch == -1)

@@ -22,7 +22,11 @@ void __throw_bad_array_new_length()
 	printl("bad array new length");
 	assert(false);
 }
-
+void __throw_logic_error(char const *)
+{
+	printl("logic error");
+	assert(false);
+}
 } // namespace std
 
 void *operator new(size_t size)

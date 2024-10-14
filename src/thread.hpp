@@ -70,7 +70,8 @@ public:
 	Thread *parent;
 	std::vector<Thread *> children;
 
-	Thread(Thread *parent);
+	const std::string name;
+	Thread(Thread *parent, std::string name);
 	~Thread() = default;
 	Thread(const Thread &) = delete;
 	Thread &operator=(const Thread &) = delete;

@@ -4,7 +4,7 @@
 #include <common.h>
 __BEGIN_DECLS
 
-char getchar();
+int getchar();
 
 size_t getline(char *buf, size_t size);
 

@@ -30,14 +30,15 @@ void WaitQueue::wakeup_all()
 Thread *idle_thread;
 void init_pcb()
 {
-	idle_thread = current_running = new Thread(nullptr);
+	idle_thread = current_running = new Thread(nullptr, "kernel-idle");
 	idle_thread->kernel_stack_top = 0;
 }
 
 std::vector<Thread *> thread_table;
 
-Thread::Thread(Thread *parent)
-	: user_context(), cursor_x(0), cursor_y(0), pid(thread_table.size()), status(Status::READY), parent(parent)
+Thread::Thread(Thread *parent, std::string name)
+	: user_context(), cursor_x(0), cursor_y(0), pid(thread_table.size()), status(Status::READY), parent(parent),
+	  name(name)
 {
 	thread_table.push_back(this);
 	if (parent != nullptr)
@@ -140,6 +141,7 @@ int Syscall::sys_getpid()
 void Syscall::sys_ps(void)
 {
 	printk("[Process Table], %d total\n", thread_table.size());
+	int index = 0;
 	for (Thread *t : thread_table)
 	{
 		const char *status = "";
@@ -158,7 +160,7 @@ void Syscall::sys_ps(void)
 			status = "EXITED";
 			break;
 		}
-		printk("pid=%d,\t status=%s\n", t->pid, status);
+		printk("[%d]:pid=%d,\t status=%s,\t name=%s\n", ++index, t->pid, status, t->name.c_str());
 	}
 }
 int Syscall::sys_exec(const char *name, int argc, char **argv)
@@ -167,7 +169,7 @@ int Syscall::sys_exec(const char *name, int argc, char **argv)
 	if (entry == 0)
 		return 0;
 
-	Thread *t = new Thread(current_running);
+	Thread *t = new Thread(current_running, name);
 
 	char **argv_copy = (char **)t->alloc_user_page(1);
 	char *argv_data = (char *)(argv_copy + argc);
