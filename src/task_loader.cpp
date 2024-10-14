@@ -1,7 +1,12 @@
 #include <arch/bios_func.h>
+#include <assert.h>
 #include <common.h>
 #include <string.h>
 #include <task_loader.hpp>
+
+#define TASK_MEM_BASE 0x52000000
+#define TASK_MAXNUM 16
+#define TASK_SIZE 0x10000
 
 // ATTENTION: The size of task_info_t must be 32 bytes
 struct task_info_t
@@ -13,7 +18,10 @@ struct task_info_t
 };
 
 task_info_t tasks[TASK_MAXNUM];
+bool task_loaded[TASK_MAXNUM];
 short task_num = 0;
+
+static_assert(sizeof(tasks) == SECTOR_SIZE);
 
 void init_task_info(void)
 {
@@ -27,10 +35,11 @@ void init_task_info(void)
 
 uint64_t load_task_img(int taskid)
 {
-	if (taskid >= task_num)
-		return 0;
+	assert(taskid < TASK_MAXNUM);
 	uint64_t entry = tasks[taskid].entry_point;
-	bios_sd_read((void *)entry, tasks[taskid].sdcard_block_num, tasks[taskid].sdcard_block_id);
+	if (!task_loaded[taskid])
+		bios_sd_read((void *)entry, tasks[taskid].sdcard_block_num, tasks[taskid].sdcard_block_id);
+	task_loaded[taskid] = true;
 	return entry;
 }
 

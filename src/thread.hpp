@@ -57,7 +57,7 @@ public:
 	ptr_t kernel_stack_top; // offset 280
 
 	int cursor_x, cursor_y;
-	int pid;
+	const int pid;
 
 	enum class Status
 	{
@@ -69,7 +69,7 @@ public:
 	Thread *parent;
 	std::vector<Thread *> children;
 
-	Thread(ptr_t start_address);
+	Thread(Thread *parent);
 	~Thread() = default;
 	Thread(const Thread &) = delete;
 	Thread &operator=(const Thread &) = delete;
@@ -79,7 +79,8 @@ private:
 	std::queue<void *> user_memory;
 
 public:
-	void *alloc_user_memory(size_t size);
+	WaitQueue wait_kill_queue;
+	void *alloc_user_page(size_t numPage);
 	void add_kernel_object(KernelObject *obj)
 	{
 		obj->ref_count++;

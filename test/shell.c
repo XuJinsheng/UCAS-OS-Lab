@@ -25,33 +25,132 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * * * * * * * * * */
 
-#include <stdio.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <string.h>
 #include <ctype.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-#define SHELL_BEGIN 20
-
+#define SHELL_BEGIN 10
+char getchar()
+{
+	int c;
+	do
+	{
+		c = sys_getchar();
+	} while (c == -1);
+	return c;
+}
+char buffer[100];
+char *argv[20];
+int spilt()
+{
+	int i = 0;
+	char *p = buffer;
+	while (*p)
+	{
+		while (isspace(*p))
+			++p;
+		if (*p)
+			argv[i++] = p;
+		while (*p && !isspace(*p))
+			++p;
+		if (*p)
+			*p++ = 0;
+	}
+	return i;
+}
 int main(void)
 {
-    sys_move_cursor(0, SHELL_BEGIN);
-    printf("------------------- COMMAND -------------------\n");
-    printf("> root@UCAS_OS: ");
+	sys_move_cursor(0, SHELL_BEGIN);
+	printf("------------------- COMMAND -------------------\n");
 
-    while (1)
-    {
-        // TODO [P3-task1]: call syscall to read UART port
-        
-        // TODO [P3-task1]: parse input
-        // note: backspace maybe 8('\b') or 127(delete)
+	while (1)
+	{
+		printf("> root@UCAS_OS: ");
+		// call syscall to read UART port
+		int buffer_index = 0;
+		for (char ch = getchar(); ch != '\n' && ch != '\r'; ch = getchar())
+		{
+			if (ch == '\b' || ch == 127)
+			{
+				if (buffer_index > 0)
+				{
+					buffer_index--;
+					printf("%c", ch);
+				}
+			}
+			else
+			{
+				buffer[buffer_index++] = ch;
+				printf("%c", ch);
+			}
+		}
+		sys_write("\n");
+		buffer[buffer_index] = '\0';
+		// ps, exec, kill, clear
+		int argc = spilt();
+		if (strcmp(argv[0], "ps") == 0)
+		{
+			sys_ps();
+		}
+		else if (strcmp(argv[0], "exec") == 0)
+		{
+			if (argc < 2)
+				printf("exec: lack of arguments\n");
+			else
+			{
+				int pid = sys_exec(argv[1], argc - 1, argv + 1);
+				if (pid == 0)
+					printf("exec: command not found\n");
+				else
+				{
+					if (argv[argc - 1][0] != '&')
+						sys_waitpid(pid);
+				}
+			}
+		}
+		else if (strcmp(argv[0], "kill") == 0)
+		{
+			if (argc < 2)
+				printf("kill: lack of arguments\n");
+			else
+			{
+				int pid = atoi(argv[1]);
+				if (sys_kill(pid) == 0)
+					printf("kill: process failed\n");
+				else
+					printf("kill: process %d has been killed\n", pid);
+			}
+		}
+		else if (strcmp(argv[0], "waitpid") == 0)
+		{
+			if (argc < 2)
+				printf("waitpid: lack of arguments\n");
+			else
+			{
+				int pid = atoi(argv[1]);
+				if (sys_waitpid(pid) == 0)
+					printf("waitpid: process failed\n");
+				else
+					printf("waitpid: process %d end\n", pid);
+			}
+		}
+		else if (strcmp(argv[0], "clear") == 0)
+		{
+			sys_clear();
+			sys_move_cursor(0, SHELL_BEGIN);
+			printf("------------------- COMMAND -------------------\n");
+		}
+		else
+		{
+			printf("Unknown command: [%s]\n", argv[0]);
+		}
+		/************************************************************/
+		/* Do not touch this comment. Reserved for future projects. */
+		/************************************************************/
+	}
 
-        // TODO [P3-task1]: ps, exec, kill, clear    
-
-        /************************************************************/
-        /* Do not touch this comment. Reserved for future projects. */
-        /************************************************************/    
-    }
-
-    return 0;
+	return 0;
 }

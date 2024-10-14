@@ -1,5 +1,6 @@
 #define _NEW
 #include <Trie.hpp>
+#include <assert.h>
 #include <common.h>
 #include <kalloc.hpp>
 #include <locks.hpp>
@@ -15,7 +16,7 @@ void init_locks()
 class mutex_lock : public KernelObject
 {
 public:
-	int id;
+	int id, key;
 	// SpinLock lock;
 	Thread *owner;
 	WaitQueue wait_queue;
@@ -31,11 +32,12 @@ public:
 		release(t);
 		KernelObject::on_thread_kill(t);
 	}
-	virtual ~mutex_lock() = default;
+	mutex_lock() = default;
+	virtual ~mutex_lock();
 };
 
 TrieLookup<mutex_lock> mutex_keys;
-std::vector<mutex_lock *> mutex_array;
+std::vector<mutex_lock *> mutex_table;
 
 int Syscall::mutex_init(int key)
 {
@@ -43,18 +45,23 @@ int Syscall::mutex_init(int key)
 	if (p == nullptr)
 	{
 		p = new mutex_lock;
-		p->id = mutex_array.size();
-		mutex_array.push_back(p);
+		p->id = mutex_table.size();
+		p->key = key;
+		p->owner = nullptr;
+		mutex_keys.insert(key, p);
+		mutex_table.push_back(p);
 	}
+	else
+		assert(p->key == key);
 	current_running->add_kernel_object(p);
 	return p->id;
 }
 
 void Syscall::mutex_acquire(int mutex_idx)
 {
-	if (mutex_idx >= mutex_array.size() || mutex_array[mutex_idx] == nullptr)
+	if (mutex_idx >= mutex_table.size() || mutex_table[mutex_idx] == nullptr)
 		return;
-	mutex_lock &lock = *mutex_array[mutex_idx];
+	mutex_lock &lock = *mutex_table[mutex_idx];
 	if (lock.owner == current_running)
 		return;
 	if (lock.owner != nullptr)
@@ -68,7 +75,13 @@ void Syscall::mutex_acquire(int mutex_idx)
 
 void Syscall::mutex_release(int mutex_idx)
 {
-	if (mutex_idx >= mutex_array.size() || mutex_array[mutex_idx] == nullptr)
+	if (mutex_idx >= mutex_table.size() || mutex_table[mutex_idx] == nullptr)
 		return;
-	mutex_array[mutex_idx]->release(current_running);
+	mutex_table[mutex_idx]->release(current_running);
+}
+
+mutex_lock::~mutex_lock()
+{
+	mutex_table[id] = nullptr;
+	mutex_keys.remove(key);
 }

@@ -46,6 +46,11 @@ void screen_write_ch(char ch)
 	else if (ch == '\b' || ch == '\177')
 	{
 		// TODO: [P3] support backspace here
+		if (current_running->cursor_x > 0)
+		{
+			current_running->cursor_x--;
+			new_screen[SCREEN_LOC(current_running->cursor_x, current_running->cursor_y)] = ' ';
+		}
 	}
 	else
 	{

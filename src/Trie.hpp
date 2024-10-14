@@ -1,5 +1,6 @@
 #pragma once
 
+#include <assert.h>
 #include <common.h>
 
 template <class T> class TrieLookup
@@ -26,7 +27,7 @@ public:
 			if (nodes[index].ch[x] == 0)
 			{
 				nodes[index].ch[x] = nodes.size();
-				nodes.push_back();
+				nodes.push_back(Item{});
 			}
 			index = nodes[index].ch[x];
 			key >>= 1;

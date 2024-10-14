@@ -31,19 +31,20 @@ void do_scheduler()
 		add_ready_thread(current_running);
 	}
 	check_sleeping();
-	if (ready_queue.empty())
+	Thread *next_thread;
+	do
 	{
-		// 休眠，等待中断唤醒
-		// TODO: 打开中断
-		assert(0);
-	}
-	else
-	{
-		Thread *next_thread = ready_queue.front();
+		if (ready_queue.empty())
+		{
+			// 休眠，等待中断唤醒
+			// TODO: 打开中断
+			assert(0);
+		}
+		next_thread = ready_queue.front();
 		ready_queue.pop();
-		next_thread->status = Thread::Status::RUNNING;
-		switch_context_entry(next_thread);
-	}
+	} while (next_thread->status != Thread::Status::READY);
+	next_thread->status = Thread::Status::RUNNING;
+	switch_context_entry(next_thread);
 }
 void add_ready_thread(Thread *thread)
 {

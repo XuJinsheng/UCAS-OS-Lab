@@ -29,7 +29,7 @@ int main(void)
 	init_pcb();
 	printk("> [INIT] PCB initialization succeeded.\n");
 
-	// Read CPU frequency (｡•ᴗ-)_
+	// Setup timer interrupt, Read CPU frequency (｡•ᴗ-)_
 	init_timer();
 
 	// Init lock mechanism o(´^｀)o
@@ -48,16 +48,8 @@ int main(void)
 	init_screen();
 	printk("> [INIT] SCREEN initialization succeeded.\n");
 
-	// TODO: [p2-task4] Setup timer interrupt and enable all interrupt globally
-	// NOTE: The function of sstatus.sie is different from sie's
-
-	// TODO: Load tasks by either task id [p1-task3] or task name [p1-task4],
-	//   and then execute them.
-	const char *task_names[] = {"print1", "print2", "lock1", "lock2", "fly", "sleep", "timer"};
-	for (auto name : task_names)
-	{
-		add_ready_thread(new Thread(load_task_img_by_name(name)));
-	}
+	// Create the first user process
+	Syscall::sys_exec("shell", 0, nullptr);
 
 	// Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
 	while (1)

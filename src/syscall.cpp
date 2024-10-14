@@ -1,3 +1,4 @@
+#include <arch/bios_func.h>
 #include <assert.h>
 #include <common.h>
 #include <drivers/screen.h>
@@ -46,17 +47,19 @@ constexpr int SYSCALL_NUM = 96;
 syscall_func syscall_table[SYSCALL_NUM];
 void init_syscall()
 {
-	/* syscall_table[SYSCALL_EXEC] = (syscall_func)Syscall::sys_exec;
-	syscall_table[SYSCALL_EXIT] = (syscall_func)Syscall::sys_exit; */
+	syscall_table[SYSCALL_EXEC] = (syscall_func)Syscall::sys_exec;
+	syscall_table[SYSCALL_EXIT] = (syscall_func)Syscall::sys_exit;
 	syscall_table[SYSCALL_SLEEP] = (syscall_func)Syscall::sleep;
-	/* syscall_table[SYSCALL_KILL] = (syscall_func)Syscall::sys_kill;
+	syscall_table[SYSCALL_KILL] = (syscall_func)Syscall::sys_kill;
 	syscall_table[SYSCALL_WAITPID] = (syscall_func)Syscall::sys_waitpid;
 	syscall_table[SYSCALL_PS] = (syscall_func)Syscall::sys_ps;
-	syscall_table[SYSCALL_GETPID] = (syscall_func)Syscall::sys_getpid; */
+	syscall_table[SYSCALL_GETPID] = (syscall_func)Syscall::sys_getpid;
 	syscall_table[SYSCALL_YIELD] = (syscall_func)Syscall::yield;
 	syscall_table[SYSCALL_WRITE] = (syscall_func)Syscall::write;
+	syscall_table[SYSCALL_READCH] = (syscall_func)Syscall::sys_getchar;
 	syscall_table[SYSCALL_MOVE_CURSOR] = (syscall_func)Syscall::move_cursor;
 	syscall_table[SYSCALL_REFLUSH] = (syscall_func)Syscall::reflush;
+	syscall_table[SYSCALL_CLEAR] = (syscall_func)Syscall::sys_clear;
 	syscall_table[SYSCALL_GET_TIMEBASE] = (syscall_func)Syscall::get_timebase;
 	syscall_table[SYSCALL_GET_TICK] = (syscall_func)Syscall::get_tick;
 	syscall_table[SYSCALL_MUTEX_INIT] = (syscall_func)Syscall::mutex_init;
@@ -70,9 +73,14 @@ ptr_t handle_syscall(const ptr_t args[8])
 		return 0;
 	ptr_t ret = 0;
 	syscall_func func = syscall_table[args[7]];
-	if (func)
-		ret = func(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
+	assert(func != nullptr);
+	ret = func(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
 	return ret;
+}
+
+int Syscall::sys_getchar()
+{
+	return bios_getchar();
 }
 
 void Syscall::move_cursor(int x, int y)
@@ -80,7 +88,7 @@ void Syscall::move_cursor(int x, int y)
 	screen_move_cursor(x, y);
 }
 
-void Syscall::write(char *buff)
+void Syscall::write(const char *buff)
 {
 	screen_write(buff);
 }
@@ -88,4 +96,9 @@ void Syscall::write(char *buff)
 void Syscall::reflush(void)
 {
 	screen_reflush();
+}
+
+void Syscall::sys_clear()
+{
+	screen_clear();
 }

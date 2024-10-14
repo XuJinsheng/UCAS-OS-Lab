@@ -11,8 +11,9 @@ namespace Syscall
 // screen, implemented in syscall.cpp
 int sys_getchar(void);
 void move_cursor(int x, int y);
-void write(char *buff);
+void write(const char *buff);
 void reflush(void);
+void sys_clear();
 
 // locks.cpp
 int mutex_init(int key);
