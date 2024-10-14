@@ -94,3 +94,4 @@ static_assert(offsetof(Thread, kernel_stack_top) == 280, "Thread layout for asm 
 
 extern void init_pcb();
 register Thread *current_running asm("tp");
+extern Thread *idle_thread;

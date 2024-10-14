@@ -27,10 +27,11 @@ void WaitQueue::wakeup_all()
 	}
 }
 
+Thread *idle_thread;
 void init_pcb()
 {
-	current_running = new Thread(nullptr);
-	current_running->status = Thread::Status::BLOCKED;
+	idle_thread = current_running = new Thread(nullptr);
+	idle_thread->kernel_stack_top = 0;
 }
 
 std::vector<Thread *> thread_table;

@@ -28,7 +28,8 @@ void do_scheduler()
 	if (current_running->status == Thread::Status::RUNNING)
 	{
 		current_running->status = Thread::Status::READY;
-		add_ready_thread(current_running);
+		if (current_running != idle_thread)
+			add_ready_thread(current_running);
 	}
 	check_sleeping();
 	Thread *next_thread;
@@ -36,12 +37,13 @@ void do_scheduler()
 	{
 		if (ready_queue.empty())
 		{
-			// 休眠，等待中断唤醒
-			// TODO: 打开中断
-			assert(0);
+			next_thread = idle_thread;
 		}
-		next_thread = ready_queue.front();
-		ready_queue.pop();
+		else
+		{
+			next_thread = ready_queue.front();
+			ready_queue.pop();
+		}
 	} while (next_thread->status != Thread::Status::READY);
 	next_thread->status = Thread::Status::RUNNING;
 	switch_context_entry(next_thread);
