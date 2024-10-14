@@ -16,9 +16,9 @@ void reflush(void);
 void sys_clear();
 
 // locks.cpp
-int mutex_init(int key);
-void mutex_acquire(int mutex_idx);
-void mutex_release(int mutex_idx);
+int mutex_init(size_t key);
+void mutex_acquire(size_t mutex_idx);
+void mutex_release(size_t mutex_idx);
 
 // time.cpp
 long get_timebase(void);
@@ -32,8 +32,8 @@ void sleep(uint32_t time);
 void sys_ps(void);
 int sys_exec(const char *name, int argc, char **argv);
 void sys_exit(void);
-int sys_kill(int pid);
-int sys_waitpid(int pid);
+int sys_kill(size_t pid);
+int sys_waitpid(size_t pid);
 int sys_getpid();
 
 } // namespace Syscall

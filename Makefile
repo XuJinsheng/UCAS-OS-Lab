@@ -36,7 +36,7 @@ MINICOM         = minicom
 
 CFLAGS          = -O2 -fno-builtin -nostdlib -nostdinc -Wall -mcmodel=medany -ggdb3
 CXXFLAGS        = -O2 -std=c++20 -Wall -mcmodel=medany -ggdb3 -fno-builtin -nostdlib 
-CXXFLAGS       += -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics
+CXXFLAGS       += -fno-exceptions -fno-rtti -fno-use-cxa-atexit -fno-threadsafe-statics -Wno-invalid-offsetof
 
 BOOT_INCLUDE    = -I$(DIR_KERNEL)/arch
 BOOT_CFLAGS     = $(BOOT_INCLUDE) -Wl,--defsym=TEXT_START=$(BOOTLOADER_ENTRYPOINT) -T riscv.lds

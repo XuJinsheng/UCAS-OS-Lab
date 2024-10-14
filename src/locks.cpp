@@ -39,7 +39,7 @@ public:
 TrieLookup<mutex_lock> mutex_keys;
 std::vector<mutex_lock *> mutex_table;
 
-int Syscall::mutex_init(int key)
+int Syscall::mutex_init(size_t key)
 {
 	mutex_lock *p = mutex_keys.lookup(key);
 	if (p == nullptr)
@@ -57,7 +57,7 @@ int Syscall::mutex_init(int key)
 	return p->id;
 }
 
-void Syscall::mutex_acquire(int mutex_idx)
+void Syscall::mutex_acquire(size_t mutex_idx)
 {
 	if (mutex_idx >= mutex_table.size() || mutex_table[mutex_idx] == nullptr)
 		return;
@@ -73,7 +73,7 @@ void Syscall::mutex_acquire(int mutex_idx)
 	lock.owner = current_running;
 }
 
-void Syscall::mutex_release(int mutex_idx)
+void Syscall::mutex_release(size_t mutex_idx)
 {
 	if (mutex_idx >= mutex_table.size() || mutex_table[mutex_idx] == nullptr)
 		return;

@@ -117,7 +117,7 @@ void Syscall::sys_exit(void)
 	current_running->kill();
 	do_scheduler();
 }
-int Syscall::sys_kill(int pid)
+int Syscall::sys_kill(size_t pid)
 {
 	Thread *t = get_thread(pid);
 	if (t == nullptr)
@@ -127,7 +127,7 @@ int Syscall::sys_kill(int pid)
 		do_scheduler();
 	return 1;
 }
-int Syscall::sys_waitpid(int pid)
+int Syscall::sys_waitpid(size_t pid)
 {
 	Thread *t = get_thread(pid);
 	if (t == nullptr)
@@ -144,10 +144,9 @@ int Syscall::sys_getpid()
 void Syscall::sys_ps(void)
 {
 	printk("[Process Table], %d total\n", thread_table.size());
-	int i = 0;
 	for (Thread *t : thread_table)
 	{
-		const char *status;
+		const char *status = "";
 		switch (t->status)
 		{
 		case Thread::Status::BLOCKED:
