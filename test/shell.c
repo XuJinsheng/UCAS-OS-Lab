@@ -33,15 +33,6 @@
 #include <unistd.h>
 
 #define SHELL_BEGIN 10
-char getchar()
-{
-	int c;
-	do
-	{
-		c = sys_getchar();
-	} while (c == -1);
-	return c;
-}
 char buffer[100];
 char *argv[20];
 int spilt()
@@ -71,7 +62,7 @@ int main(void)
 		printf("> root@UCAS_OS: ");
 		// call syscall to read UART port
 		int buffer_index = 0;
-		for (char ch = getchar(); ch != '\n' && ch != '\r'; ch = getchar())
+		for (char ch = sys_getchar(); ch != '\n' && ch != '\r'; ch = sys_getchar())
 		{
 			if (ch == '\b' || ch == 127)
 			{

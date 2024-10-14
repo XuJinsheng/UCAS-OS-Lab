@@ -80,7 +80,15 @@ ptr_t handle_syscall(const ptr_t args[8])
 
 int Syscall::sys_getchar()
 {
-	return bios_getchar();
+	int c = bios_getchar();
+	while (c == -1)
+	{
+		disable_preempt();
+		c = bios_getchar();
+		enable_preempt();
+	}
+	disable_preempt();
+	return c;
 }
 
 void Syscall::move_cursor(int x, int y)
