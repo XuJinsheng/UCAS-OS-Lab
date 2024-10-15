@@ -15,15 +15,15 @@ class Thread;
 class KernelObject
 {
 private:
-	size_t ref_count = 0;
 	friend Thread;
 
 public:
+	size_t ref_count = 0;
 	KernelObject() = default;
 	KernelObject(const KernelObject &) = delete;
 	KernelObject &operator=(const KernelObject &) = delete;
 	virtual ~KernelObject() = default;
-	virtual void on_thread_kill(Thread *)
+	virtual void on_thread_unregister(Thread *)
 	{
 		ref_count--;
 		if (ref_count == 0)
@@ -77,16 +77,27 @@ public:
 	Thread &operator=(const Thread &) = delete;
 
 private:
-	TrieLookup<KernelObject> kernel_objects;
+	TrieLookup<KernelObject *> kernel_objects;
 	std::queue<void *> user_memory;
 
 public:
 	WaitQueue wait_kill_queue;
 	void *alloc_user_page(size_t numPage);
-	void add_kernel_object(KernelObject *obj)
+	bool register_kernel_object(KernelObject *obj) // true: insert success, false: already exists
 	{
-		obj->ref_count++;
-		kernel_objects.insert((size_t)obj, obj);
+		if (!kernel_objects.insert((size_t)obj, obj))
+		{
+			obj->ref_count++;
+			return true;
+		}
+		return false;
+	}
+	bool unregister_kernel_object(KernelObject *obj) // true: remove success, false: not found
+	{
+		if (kernel_objects.remove((size_t)obj))
+			return false;
+		obj->on_thread_unregister(this);
+		return true;
 	}
 	void block(); // need to be added to block queue manually
 	void wakeup();

@@ -11,76 +11,108 @@
 void init_locks()
 {
 }
+class IdPool;
+class IdObject : public KernelObject
+{
+	size_t handle, trie_idx;
+	friend IdPool;
+};
+class IdPool
+{
+	TrieLookup<IdObject *> keymap;
+	std::vector<IdObject *> table;
 
-class mutex_lock : public KernelObject
+public:
+	int64_t init(size_t key, auto create_fn)
+	{
+		IdObject *p = keymap.lookup(key);
+		if (p == nullptr)
+		{
+			p = create_fn();
+			p->handle = table.size();
+			table.push_back(p);
+			p->trie_idx = keymap.insert(key, p);
+		}
+		current_running->register_kernel_object(p);
+		return p->handle;
+	}
+	IdObject *get(size_t handle)
+	{
+		if (handle >= table.size())
+			return nullptr;
+		return table[handle]; // may be nullptr
+	}
+	void close(size_t handle)
+	{
+		IdObject *obj = get(handle);
+		if (obj == nullptr)
+			return;
+		if (obj->ref_count == 1 && current_running->unregister_kernel_object(obj))
+			table[handle] = nullptr;
+	}
+	void remove(IdObject *obj)
+	{
+		if (obj->handle >= table.size())
+			return;
+		table[obj->handle] = nullptr;
+		keymap.remove_by_idx(obj->trie_idx);
+	}
+};
+
+class mutex_lock : public IdObject
 {
 public:
-	int id, key;
 	// SpinLock lock;
 	Thread *owner;
 	WaitQueue wait_queue;
-
+	mutex_lock() : owner(nullptr)
+	{
+	}
+	void acquire()
+	{
+		if (owner == current_running)
+			return;
+		if (owner != nullptr)
+		{
+			wait_queue.push((Thread *)current_running);
+			current_running->block();
+			do_scheduler();
+		}
+		owner = current_running;
+	}
 	void release(Thread *t)
 	{
 		if (owner != t)
 			return;
 		owner = wait_queue.wakeup_one();
 	}
-	virtual void on_thread_kill(Thread *t) override
+	virtual void on_thread_unregister(Thread *t) override
 	{
 		release(t);
-		KernelObject::on_thread_kill(t);
+		KernelObject::on_thread_unregister(t);
 	}
-	mutex_lock() = default;
-	virtual ~mutex_lock();
+	inline static IdPool pool;
+	virtual ~mutex_lock()
+	{
+		pool.remove(this);
+	}
 };
-
-TrieLookup<mutex_lock> mutex_keys;
-std::vector<mutex_lock *> mutex_table;
 
 int Syscall::mutex_init(size_t key)
 {
-	mutex_lock *p = mutex_keys.lookup(key);
-	if (p == nullptr)
-	{
-		p = new mutex_lock;
-		p->id = mutex_table.size();
-		p->key = key;
-		p->owner = nullptr;
-		mutex_keys.insert(key, p);
-		mutex_table.push_back(p);
-	}
-	else
-		assert(p->key == key);
-	current_running->add_kernel_object(p);
-	return p->id;
+	return mutex_lock::pool.init(key, []() { return new mutex_lock(); });
 }
 
 void Syscall::mutex_acquire(size_t mutex_idx)
 {
-	if (mutex_idx >= mutex_table.size() || mutex_table[mutex_idx] == nullptr)
-		return;
-	mutex_lock &lock = *mutex_table[mutex_idx];
-	if (lock.owner == current_running)
-		return;
-	if (lock.owner != nullptr)
-	{
-		lock.wait_queue.push((Thread *)current_running);
-		current_running->block();
-		do_scheduler();
-	}
-	lock.owner = current_running;
+	mutex_lock *lock = (mutex_lock *)mutex_lock::pool.get(mutex_idx);
+	if (lock)
+		lock->acquire();
 }
 
 void Syscall::mutex_release(size_t mutex_idx)
 {
-	if (mutex_idx >= mutex_table.size() || mutex_table[mutex_idx] == nullptr)
-		return;
-	mutex_table[mutex_idx]->release(current_running);
-}
-
-mutex_lock::~mutex_lock()
-{
-	mutex_table[id] = nullptr;
-	mutex_keys.remove(key);
+	mutex_lock *lock = (mutex_lock *)mutex_lock::pool.get(mutex_idx);
+	if (lock)
+		lock->release(current_running);
 }

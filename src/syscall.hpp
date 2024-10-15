@@ -19,6 +19,18 @@ void sys_clear();
 int mutex_init(size_t key);
 void mutex_acquire(size_t mutex_idx);
 void mutex_release(size_t mutex_idx);
+int64_t sys_barrier_init(int64_t key, size_t goal);
+void sys_barrier_wait(size_t bar_idx);
+void sys_barrier_destroy(size_t bar_idx);
+int64_t sys_condition_init(int64_t key);
+void sys_condition_wait(size_t cond_idx, size_t mutex_idx);
+void sys_condition_signal(size_t cond_idx);
+void sys_condition_broadcast(size_t cond_idx);
+void sys_condition_destroy(size_t cond_idx);
+int64_t sys_mbox_open(const char *name);
+void sys_mbox_close(size_t mbox_id);
+int64_t sys_mbox_recv(size_t mbox_idx, void *msg, size_t msg_length);
+int64_t sys_mbox_send(size_t mbox_idx, const void *msg, size_t msg_length);
 
 // time.cpp
 long get_timebase(void);

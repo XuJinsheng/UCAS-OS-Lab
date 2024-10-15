@@ -78,7 +78,7 @@ void Thread::kill()
 {
 	status = Status::EXITED;
 	wait_kill_queue.wakeup_all();
-	kernel_objects.foreach ([this](KernelObject *obj) { obj->on_thread_kill(this); });
+	kernel_objects.foreach ([this](KernelObject *obj) { obj->on_thread_unregister(this); });
 	if (parent != nullptr)
 	{
 		for (Thread *child : children)
@@ -89,6 +89,7 @@ void Thread::kill()
 			}
 			else
 			{
+				// TODO: where to place dead child? delete maybe cause pointer invalid
 				child->parent = thread_table[0];
 				thread_table[0]->children.push_back(child);
 			}

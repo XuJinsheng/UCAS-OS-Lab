@@ -3,12 +3,12 @@
 #include <assert.h>
 #include <common.h>
 
-template <class T> class TrieLookup
+template <class T> class TrieLookup // require T is a pointer type
 {
 private:
 	struct Item
 	{
-		T *val;
+		T val;
 		int ch[2];
 	};
 	std::vector<Item> nodes;
@@ -18,7 +18,7 @@ public:
 	{
 	}
 
-	void insert(size_t key, T *val)
+	size_t insert(size_t key, T val) // true: insert success, false: key already exists
 	{
 		int index = 0;
 		while (key)
@@ -33,9 +33,11 @@ public:
 			key >>= 1;
 		}
 		assert(nodes[index].val == nullptr || nodes[index].val == val);
+		bool empty = nodes[index].val == nullptr;
 		nodes[index].val = val;
+		return empty ? index : 0;
 	}
-	T *lookup(size_t key)
+	T lookup(size_t key)
 	{
 		int index = 0;
 		while (key)
@@ -48,18 +50,24 @@ public:
 		}
 		return nodes[index].val;
 	}
-	void remove(size_t key)
+	bool remove(size_t key) // true: remove success, false: key not found
 	{
 		int index = 0;
 		while (key)
 		{
 			int x = key & 1;
 			if (nodes[index].ch[x] == 0)
-				return;
+				return false;
 			index = nodes[index].ch[x];
 			key >>= 1;
 		}
 		nodes[index].val = nullptr;
+		return true;
+	}
+	void remove_by_idx(size_t idx)
+	{
+		if (idx < nodes.size())
+			nodes[idx].val = nullptr;
 	}
 	void foreach (auto f)
 	{
