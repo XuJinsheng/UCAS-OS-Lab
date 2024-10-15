@@ -18,7 +18,7 @@ public:
 	{
 	}
 
-	size_t insert(size_t key, T val) // true: insert success, false: key already exists
+	size_t insert(size_t key, T val) // 0: key already exists, otherwise: index of the new node
 	{
 		int index = 0;
 		while (key)

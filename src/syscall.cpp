@@ -64,19 +64,19 @@ void init_syscall()
 	syscall_table[SYSCALL_GET_TICK] = (syscall_func)Syscall::get_tick;
 	syscall_table[SYSCALL_MUTEX_INIT] = (syscall_func)Syscall::mutex_init;
 	syscall_table[SYSCALL_MUTEX_ACQ] = (syscall_func)Syscall::mutex_acquire;
-	syscall_table[SYSCALL_MUTEX_RELEASE] = (syscall_func)Syscall::mutex_release; /*
-	 syscall_table[SYSCALL_BARR_INIT] = (syscall_func)Syscall::sys_barrier_init;
-	 syscall_table[SYSCALL_BARR_WAIT] = (syscall_func)Syscall::sys_barrier_wait;
-	 syscall_table[SYSCALL_BARR_DESTROY] = (syscall_func)Syscall::sys_barrier_destroy;
-	 syscall_table[SYSCALL_COND_INIT] = (syscall_func)Syscall::sys_condition_init;
-	 syscall_table[SYSCALL_COND_WAIT] = (syscall_func)Syscall::sys_condition_wait;
-	 syscall_table[SYSCALL_COND_SIGNAL] = (syscall_func)Syscall::sys_condition_signal;
-	 syscall_table[SYSCALL_COND_BROADCAST] = (syscall_func)Syscall::sys_condition_broadcast;
-	 syscall_table[SYSCALL_COND_DESTROY] = (syscall_func)Syscall::sys_condition_destroy;
-	 syscall_table[SYSCALL_MBOX_OPEN] = (syscall_func)Syscall::sys_mbox_open;
-	 syscall_table[SYSCALL_MBOX_CLOSE] = (syscall_func)Syscall::sys_mbox_close;
-	 syscall_table[SYSCALL_MBOX_SEND] = (syscall_func)Syscall::sys_mbox_send;
-	 syscall_table[SYSCALL_MBOX_RECV] = (syscall_func)Syscall::sys_mbox_recv; */
+	syscall_table[SYSCALL_MUTEX_RELEASE] = (syscall_func)Syscall::mutex_release;
+	syscall_table[SYSCALL_BARR_INIT] = (syscall_func)Syscall::sys_barrier_init;
+	syscall_table[SYSCALL_BARR_WAIT] = (syscall_func)Syscall::sys_barrier_wait;
+	syscall_table[SYSCALL_BARR_DESTROY] = (syscall_func)Syscall::sys_barrier_destroy;
+	syscall_table[SYSCALL_COND_INIT] = (syscall_func)Syscall::sys_condition_init;
+	syscall_table[SYSCALL_COND_WAIT] = (syscall_func)Syscall::sys_condition_wait;
+	syscall_table[SYSCALL_COND_SIGNAL] = (syscall_func)Syscall::sys_condition_signal;
+	syscall_table[SYSCALL_COND_BROADCAST] = (syscall_func)Syscall::sys_condition_broadcast;
+	syscall_table[SYSCALL_COND_DESTROY] = (syscall_func)Syscall::sys_condition_destroy;
+	syscall_table[SYSCALL_MBOX_OPEN] = (syscall_func)Syscall::sys_mbox_open;
+	syscall_table[SYSCALL_MBOX_CLOSE] = (syscall_func)Syscall::sys_mbox_close;
+	syscall_table[SYSCALL_MBOX_SEND] = (syscall_func)Syscall::sys_mbox_send;
+	syscall_table[SYSCALL_MBOX_RECV] = (syscall_func)Syscall::sys_mbox_recv;
 }
 
 ptr_t handle_syscall(const ptr_t args[8])
