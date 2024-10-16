@@ -1,3 +1,4 @@
+#include <arch/bios_func.h>
 #include <common.h>
 #include <drivers/screen.h>
 #include <kalloc.hpp>
@@ -58,6 +59,9 @@ int main(int hartid)
 
 		// Create the first user process
 		Syscall::sys_exec("shell", 0, nullptr);
+
+		// Wake up other cores, this core has masked SIP
+		bios_send_ipi(nullptr);
 	}
 	else
 	{

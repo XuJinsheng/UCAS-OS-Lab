@@ -37,12 +37,14 @@ void init_processor(size_t hartid)
 	current_cpu->idle_thread->kernel_stack_top = 0;
 }
 
+SpinLock thread_global_lock;
 std::vector<Thread *> thread_table;
 
 Thread::Thread(Thread *parent, std::string name)
 	: user_context(), cursor_x(0), cursor_y(0), pid(thread_table.size()), status(Status::READY), parent(parent),
 	  name(name)
 {
+	thread_global_lock.lock();
 	thread_table.push_back(this);
 	if (parent != nullptr)
 		parent->children.push_back(this);
@@ -51,15 +53,18 @@ Thread::Thread(Thread *parent, std::string name)
 	kernel_stack_top = (ptr_t)allocKernelPage(2) + PAGE_SIZE * 2;
 	ptr_t *ksp = (ptr_t *)kernel_stack_top;
 	ksp -= 14;
-	ksp[0] = (ptr_t)user_trap_return;
+	ksp[0] = (ptr_t)kernel_thread_first_run;
 	ksp[13] = kernel_stack_top;
 	kernel_stack_top = (ptr_t)ksp;
+	thread_global_lock.unlock();
 }
 
 void *Thread::alloc_user_page(size_t numPage)
 {
 	void *ret = allocUserPage(numPage);
+	thread_own_lock.lock();
 	user_memory.push(ret);
+	thread_own_lock.unlock();
 	return ret;
 }
 void Thread::block()
@@ -71,7 +76,9 @@ void Thread::block()
 void Thread::wakeup()
 {
 	if (status == Status::EXITED)
+	{
 		return;
+	}
 	assert(status != Status::RUNNING);
 	status = Status::READY;
 	add_ready_thread(this);
@@ -79,6 +86,7 @@ void Thread::wakeup()
 
 void Thread::kill()
 {
+	lock_guard guard(thread_own_lock);
 	status = Status::EXITED;
 	wait_kill_queue.wakeup_all();
 	kernel_objects.foreach ([this](KernelObject *obj) { obj->on_thread_unregister(this); });
@@ -107,6 +115,7 @@ void Thread::kill()
 
 Thread *get_thread(size_t pid)
 {
+	lock_guard guard(thread_global_lock);
 	if (pid >= thread_table.size())
 		return nullptr;
 	if (thread_table[pid]->status == Thread::Status::EXITED)
@@ -133,7 +142,9 @@ int Syscall::sys_waitpid(size_t pid)
 	Thread *t = get_thread(pid);
 	if (t == nullptr)
 		return 0;
+	t->thread_own_lock.lock();
 	t->wait_kill_queue.push(current_cpu->current_thread);
+	t->thread_own_lock.unlock();
 	current_cpu->current_thread->block();
 	do_scheduler();
 	return pid;
@@ -144,6 +155,7 @@ int Syscall::sys_getpid()
 }
 void Syscall::sys_ps(void)
 {
+	thread_global_lock.lock();
 	printk("[Process Table], %d total\n", thread_table.size());
 	int index = 0;
 	for (Thread *t : thread_table)
@@ -166,6 +178,7 @@ void Syscall::sys_ps(void)
 		}
 		printk("[%d]:pid=%d,\t status=%s,\t name=%s\n", ++index, t->pid, status, t->name.c_str());
 	}
+	thread_global_lock.unlock();
 }
 int Syscall::sys_exec(const char *name, int argc, char **argv)
 {

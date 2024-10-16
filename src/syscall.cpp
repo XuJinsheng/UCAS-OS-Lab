@@ -103,22 +103,27 @@ int Syscall::sys_getchar()
 	return c;
 }
 
+SpinLock screen_lock;
 void Syscall::move_cursor(int x, int y)
 {
+	lock_guard guard(screen_lock);
 	screen_move_cursor(x, y);
 }
 
 void Syscall::write(const char *buff)
 {
+	lock_guard guard(screen_lock);
 	screen_write(buff);
 }
 
 void Syscall::reflush(void)
 {
+	lock_guard guard(screen_lock);
 	screen_reflush();
 }
 
 void Syscall::sys_clear()
 {
+	lock_guard guard(screen_lock);
 	screen_clear();
 }

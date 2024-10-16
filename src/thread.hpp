@@ -2,6 +2,7 @@
 
 #include <Trie.hpp>
 #include <common.h>
+#include <spinlock.hpp>
 struct user_context_reg_t
 {
 	ptr_t regs[31];
@@ -20,6 +21,7 @@ public:
 
 	Thread *idle_thread;
 	size_t cpu_id, hartid;
+	size_t own_spinlock_count = 0;
 };
 static_assert(offsetof(CPU, scratch_for_asm) == 8, "Processor layout for asm error");
 register CPU *current_cpu asm("tp");
@@ -28,7 +30,7 @@ class KernelObject
 {
 private:
 	friend Thread;
-	size_t ref_count = 0;
+	std::atomic<size_t> ref_count = 0;
 
 public:
 	KernelObject() = default;
@@ -37,8 +39,7 @@ public:
 	virtual ~KernelObject() = default;
 	virtual void on_thread_unregister(Thread *)
 	{
-		ref_count--;
-		if (ref_count == 0)
+		if (--ref_count == 0)
 		{
 			delete this;
 		}
@@ -93,6 +94,7 @@ private:
 	std::queue<void *> user_memory;
 
 public:
+	SpinLock thread_own_lock;
 	WaitQueue wait_kill_queue;
 	void *alloc_user_page(size_t numPage);
 	bool register_kernel_object(KernelObject *obj) // true: insert success, false: already exists

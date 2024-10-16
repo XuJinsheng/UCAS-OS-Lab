@@ -20,12 +20,14 @@ class IdObject : public KernelObject
 };
 class IdPool
 {
+	SpinLock lock;
 	TrieLookup<IdObject *> keymap;
 	std::vector<IdObject *> table;
 
 public:
 	int64_t init(size_t key, auto create_fn)
 	{
+		lock_guard guard(lock);
 		IdObject *p = keymap.lookup(key);
 		if (p == nullptr)
 		{
@@ -39,19 +41,21 @@ public:
 	}
 	IdObject *get(size_t handle)
 	{
+		lock_guard guard(lock);
 		if (handle >= table.size())
 			return nullptr;
 		return table[handle]; // may be nullptr
 	}
 	void close(size_t handle)
 	{
-		IdObject *obj = get(handle);
+		IdObject *obj = get(handle); // lock guaranteed
 		if (obj == nullptr)
 			return;
 		current_cpu->current_thread->unregister_kernel_object(obj);
 	}
 	void remove(IdObject *obj)
 	{
+		lock_guard guard(lock);
 		if (obj->handle >= table.size())
 			return;
 		table[obj->handle] = nullptr;
@@ -62,7 +66,7 @@ public:
 class mutex_lock : public IdObject
 {
 public:
-	// SpinLock lock;
+	SpinLock lock;
 	Thread *owner;
 	WaitQueue wait_queue;
 	mutex_lock() : owner(nullptr)
@@ -70,18 +74,23 @@ public:
 	}
 	void acquire()
 	{
+		lock.lock();
 		if (owner == current_cpu->current_thread)
 			return;
 		if (owner != nullptr)
 		{
 			wait_queue.push(current_cpu->current_thread);
 			current_cpu->current_thread->block();
+			lock.unlock();
 			do_scheduler();
 		}
+		else
+			lock.unlock();
 		owner = current_cpu->current_thread;
 	}
 	void release(Thread *t)
 	{
+		lock_guard guard(lock);
 		if (owner != t)
 			return;
 		owner = wait_queue.wakeup_one();
@@ -122,6 +131,7 @@ class barrier : public IdObject
 	size_t goal;
 	size_t count;
 	WaitQueue wait_queue;
+	SpinLock lock;
 
 public:
 	barrier(size_t goal) : goal(goal), count(0)
@@ -129,17 +139,20 @@ public:
 	}
 	void wait()
 	{
+		lock.lock();
 		count++;
 		if (count < goal)
 		{
 			wait_queue.push(current_cpu->current_thread);
 			current_cpu->current_thread->block();
+			lock.unlock();
 			do_scheduler();
 		}
 		else
 		{
 			count = 0;
 			wait_queue.wakeup_all();
+			lock.unlock();
 		}
 	}
 	inline static IdPool pool;
@@ -167,23 +180,30 @@ void Syscall::sys_barrier_destroy(size_t bar_idx)
 class condition : public IdObject
 {
 	WaitQueue wait_queue;
+	SpinLock lock;
 
 public:
-	void wait(mutex_lock *lock)
+	void wait(mutex_lock *mutex)
 	{
+		lock.lock();
 		wait_queue.push(current_cpu->current_thread);
-		lock->release(current_cpu->current_thread);
+		lock.unlock();
+		mutex->release(current_cpu->current_thread);
 		current_cpu->current_thread->block();
 		do_scheduler();
-		lock->acquire();
+		mutex->acquire();
 	}
 	void signal()
 	{
+		lock.lock();
 		wait_queue.wakeup_one();
+		lock.unlock();
 	}
 	void broadcast()
 	{
+		lock.lock();
 		wait_queue.wakeup_all();
+		lock.unlock();
 	}
 	inline static IdPool pool;
 	virtual ~condition()
@@ -227,12 +247,15 @@ class mailbox : public IdObject
 
 	WaitQueue send_wait_queue, recv_wait_queue;
 
+	SpinLock lock;
+
 public:
 	mailbox()
 	{
 	}
 	int64_t send(const void *msg, size_t msg_length)
 	{
+		lock_guard guard(lock);
 		const uint8_t *p = (const uint8_t *)msg;
 		size_t length = msg_length;
 		while (length--)
@@ -241,7 +264,9 @@ public:
 			{
 				send_wait_queue.push(current_cpu->current_thread);
 				current_cpu->current_thread->block();
+				lock.unlock();
 				do_scheduler();
+				lock.lock();
 			}
 			msg_queue.push(*p++);
 			recv_wait_queue.wakeup_one();
@@ -250,6 +275,7 @@ public:
 	}
 	int64_t recv(void *msg, size_t msg_length)
 	{
+		lock_guard guard(lock);
 		uint8_t *p = (uint8_t *)msg;
 		size_t length = msg_length;
 		while (length--)
@@ -258,7 +284,9 @@ public:
 			{
 				recv_wait_queue.push(current_cpu->current_thread);
 				current_cpu->current_thread->block();
+				lock.unlock();
 				do_scheduler();
+				lock.lock();
 			}
 			*p++ = msg_queue.front();
 			msg_queue.pop();

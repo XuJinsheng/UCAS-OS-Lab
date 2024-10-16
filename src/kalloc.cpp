@@ -1,6 +1,6 @@
 #include <assert.h>
 #include <kalloc.hpp>
-
+#include <spinlock.hpp>
 namespace std
 {
 void terminate() noexcept
@@ -192,8 +192,11 @@ void init_kernel_heap()
 	kpage->init();
 	upage->init(USER_PAGE_START - USER_PAGE_BEGIN);
 }
+
+SpinLock alloc_lock;
 void *kalloc(size_t size, size_t align)
 {
+	lock_guard guard(alloc_lock);
 	if (size > 1024)
 		return kpage->alloc(size);
 	else
@@ -201,6 +204,7 @@ void *kalloc(size_t size, size_t align)
 }
 void kfree(void *ptr)
 {
+	lock_guard guard(alloc_lock);
 	if ((ptr_t)ptr < KERNEL_PAGE_BEGIN)
 		ksmall->free(ptr);
 	else
@@ -209,15 +213,18 @@ void kfree(void *ptr)
 
 void *allocKernelPage(int numPage)
 {
+	lock_guard guard(alloc_lock);
 	return kpage->alloc(numPage * 4096);
 }
 
 void *allocUserPage(int numPage)
 {
+	lock_guard guard(alloc_lock);
 	return upage->alloc(numPage * 4096);
 }
 
 void freeUserPage(void *ptr)
 {
+	lock_guard guard(alloc_lock);
 	upage->free(ptr);
 }

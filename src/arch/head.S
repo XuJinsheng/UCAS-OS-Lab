@@ -14,6 +14,8 @@ _start:
 	/* Mask all interrupts */
 	csrw sie, zero
 	csrw sie, zero
+	csrw sip, zero
+	csrw sip, zero
 
     li gp,0
     li tp,0

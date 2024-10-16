@@ -92,7 +92,7 @@ void bios_logging(const char *str);
 
 // send Inter-Processor Interrupts(IPI)
 // use bios send ipi function
-void send_ipi(const unsigned long *hart_mask);
+void bios_send_ipi(const unsigned long *hart_mask);
 /************************************************************/
 __END_DECLS
 #endif

@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <common.h>
 #include <kstdio.h>
+#include <spinlock.hpp>
 #include <syscall.hpp>
 #include <thread.hpp>
 #include <time.hpp>
@@ -12,7 +13,7 @@ void init_trap()
 {
 	csr_clear(CSR_SSTATUS, SR_SIE);
 	csr_clear(CSR_SSTATUS, SR_SPIE);
-	csr_set(CSR_SIE, SIE_SEIE | SIE_STIE | SIE_SSIE);
+	csr_set(CSR_SIE, SIE_SEIE | SIE_STIE);
 	csr_write(CSR_STVEC, kernel_trap_entry);
 }
 
@@ -35,6 +36,7 @@ void handle_other(user_context_reg_t *regs)
 	assert(0);
 }
 
+SpinLock trap_lock;
 void trap_handler(int from_kernel, ptr_t scause, ptr_t stval)
 {
 	user_context_reg_t &regs = current_cpu->current_thread->user_context;
