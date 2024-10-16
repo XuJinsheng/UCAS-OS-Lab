@@ -97,7 +97,7 @@ public:
 	void *alloc_user_page(size_t numPage);
 	bool register_kernel_object(KernelObject *obj) // true: insert success, false: already exists
 	{
-		if (!kernel_objects.insert((size_t)obj, obj))
+		if (kernel_objects.insert((size_t)obj, obj))
 		{
 			obj->ref_count++;
 			return true;
