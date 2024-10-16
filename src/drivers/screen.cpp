@@ -39,27 +39,27 @@ void screen_write_ch(char ch)
 {
 	if (ch == '\n')
 	{
-		current_running->cursor_x = 0;
-		if (current_running->cursor_y < SCREEN_HEIGHT)
-			current_running->cursor_y++;
+		current_cpu->current_thread->cursor_x = 0;
+		if (current_cpu->current_thread->cursor_y < SCREEN_HEIGHT)
+			current_cpu->current_thread->cursor_y++;
 	}
 	else if (ch == '\b' || ch == '\177')
 	{
 		// TODO: [P3] support backspace here
-		if (current_running->cursor_x > 0)
+		if (current_cpu->current_thread->cursor_x > 0)
 		{
-			current_running->cursor_x--;
-			new_screen[SCREEN_LOC(current_running->cursor_x, current_running->cursor_y)] = ' ';
+			current_cpu->current_thread->cursor_x--;
+			new_screen[SCREEN_LOC(current_cpu->current_thread->cursor_x, current_cpu->current_thread->cursor_y)] = ' ';
 		}
 	}
 	else
 	{
-		new_screen[SCREEN_LOC(current_running->cursor_x, current_running->cursor_y)] = ch;
-		if (++current_running->cursor_x >= SCREEN_WIDTH)
+		new_screen[SCREEN_LOC(current_cpu->current_thread->cursor_x, current_cpu->current_thread->cursor_y)] = ch;
+		if (++current_cpu->current_thread->cursor_x >= SCREEN_WIDTH)
 		{
-			current_running->cursor_x = 0;
-			if (current_running->cursor_y < SCREEN_HEIGHT)
-				current_running->cursor_y++;
+			current_cpu->current_thread->cursor_x = 0;
+			if (current_cpu->current_thread->cursor_y < SCREEN_HEIGHT)
+				current_cpu->current_thread->cursor_y++;
 		}
 	}
 }
@@ -81,8 +81,8 @@ void screen_clear(void)
 			new_screen[SCREEN_LOC(j, i)] = ' ';
 		}
 	}
-	current_running->cursor_x = 0;
-	current_running->cursor_y = 0;
+	current_cpu->current_thread->cursor_x = 0;
+	current_cpu->current_thread->cursor_y = 0;
 	screen_reflush();
 }
 
@@ -96,8 +96,8 @@ void screen_move_cursor(int x, int y)
 		y = SCREEN_HEIGHT - 1;
 	else if (y < 0)
 		y = 0;
-	current_running->cursor_x = x;
-	current_running->cursor_y = y;
+	current_cpu->current_thread->cursor_x = x;
+	current_cpu->current_thread->cursor_y = y;
 	vt100_move_cursor(x + 1, y + 1);
 }
 
@@ -138,5 +138,5 @@ void screen_reflush(void)
 	}
 
 	/* recover cursor position */
-	vt100_move_cursor(current_running->cursor_x, current_running->cursor_y);
+	vt100_move_cursor(current_cpu->current_thread->cursor_x, current_cpu->current_thread->cursor_y);
 }

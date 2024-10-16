@@ -37,7 +37,7 @@ void handle_other(user_context_reg_t *regs)
 
 void trap_handler(int from_kernel, ptr_t scause, ptr_t stval)
 {
-	user_context_reg_t &regs = current_running->user_context;
+	user_context_reg_t &regs = current_cpu->current_thread->user_context;
 	switch (scause)
 	{
 	case EXC_SYSCALL:

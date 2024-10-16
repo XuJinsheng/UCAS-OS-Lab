@@ -8,5 +8,5 @@ struct Thread;
 void user_trap_entry();
 void user_trap_return();
 void kernel_trap_entry();
-void switch_context_entry(Thread* to_thread);// will also update current_running
+void switch_context_entry(Thread *from_thread, Thread *to_thread); // will not update current_running
 __END_DECLS

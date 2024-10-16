@@ -12,13 +12,25 @@ struct user_context_reg_t
 };
 class Thread;
 
+class CPU
+{
+public:
+	Thread *current_thread;
+	ptr_t scratch_for_asm;
+
+	Thread *idle_thread;
+	size_t cpu_id, hartid;
+};
+static_assert(offsetof(CPU, scratch_for_asm) == 8, "Processor layout for asm error");
+register CPU *current_cpu asm("tp");
+
 class KernelObject
 {
 private:
 	friend Thread;
+	size_t ref_count = 0;
 
 public:
-	size_t ref_count = 0;
 	KernelObject() = default;
 	KernelObject(const KernelObject &) = delete;
 	KernelObject &operator=(const KernelObject &) = delete;
@@ -105,6 +117,4 @@ public:
 };
 static_assert(offsetof(Thread, kernel_stack_top) == 280, "Thread layout for asm error");
 
-extern void init_pcb();
-register Thread *current_running asm("tp");
-extern Thread *idle_thread;
+extern void init_processor(size_t hartid);

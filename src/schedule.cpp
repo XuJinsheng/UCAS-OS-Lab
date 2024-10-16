@@ -24,11 +24,11 @@ void check_sleeping()
 void do_scheduler()
 {
 	// check SIE clear
-	if (current_running->status == Thread::Status::RUNNING)
+	if (current_cpu->current_thread->status == Thread::Status::RUNNING)
 	{
-		current_running->status = Thread::Status::READY;
-		if (current_running != idle_thread)
-			add_ready_thread(current_running);
+		current_cpu->current_thread->status = Thread::Status::READY;
+		if (current_cpu->current_thread != current_cpu->idle_thread)
+			add_ready_thread(current_cpu->current_thread);
 	}
 	check_sleeping();
 	Thread *next_thread;
@@ -36,7 +36,7 @@ void do_scheduler()
 	{
 		if (ready_queue.empty())
 		{
-			next_thread = idle_thread;
+			next_thread = current_cpu->idle_thread;
 		}
 		else
 		{
@@ -44,8 +44,10 @@ void do_scheduler()
 			ready_queue.pop();
 		}
 	} while (next_thread->status != Thread::Status::READY);
+	Thread *from_thread = current_cpu->current_thread;
+	current_cpu->current_thread = next_thread;
 	next_thread->status = Thread::Status::RUNNING;
-	switch_context_entry(next_thread);
+	switch_context_entry(from_thread, next_thread);
 }
 void add_ready_thread(Thread *thread)
 {
@@ -60,8 +62,8 @@ void Syscall::yield(void)
 void Syscall::sleep(uint32_t time)
 {
 	size_t wakeup_time = get_timer() + time;
-	sleeping_queue.push({wakeup_time, (Thread *)current_running});
-	current_running->block();
+	sleeping_queue.push({wakeup_time, current_cpu->current_thread});
+	current_cpu->current_thread->block();
 	do_scheduler();
 }
 

@@ -34,7 +34,7 @@ public:
 			table.push_back(p);
 			p->trie_idx = keymap.insert(key, p);
 		}
-		current_running->register_kernel_object(p);
+		current_cpu->current_thread->register_kernel_object(p);
 		return p->handle;
 	}
 	IdObject *get(size_t handle)
@@ -48,8 +48,7 @@ public:
 		IdObject *obj = get(handle);
 		if (obj == nullptr)
 			return;
-		if (obj->ref_count == 1 && current_running->unregister_kernel_object(obj))
-			table[handle] = nullptr;
+		current_cpu->current_thread->unregister_kernel_object(obj);
 	}
 	void remove(IdObject *obj)
 	{
@@ -71,15 +70,15 @@ public:
 	}
 	void acquire()
 	{
-		if (owner == current_running)
+		if (owner == current_cpu->current_thread)
 			return;
 		if (owner != nullptr)
 		{
-			wait_queue.push((Thread *)current_running);
-			current_running->block();
+			wait_queue.push(current_cpu->current_thread);
+			current_cpu->current_thread->block();
 			do_scheduler();
 		}
-		owner = current_running;
+		owner = current_cpu->current_thread;
 	}
 	void release(Thread *t)
 	{
@@ -115,7 +114,7 @@ void Syscall::mutex_release(size_t mutex_idx)
 {
 	mutex_lock *lock = (mutex_lock *)mutex_lock::pool.get(mutex_idx);
 	if (lock)
-		lock->release(current_running);
+		lock->release(current_cpu->current_thread);
 }
 
 class barrier : public IdObject
@@ -133,8 +132,8 @@ public:
 		count++;
 		if (count < goal)
 		{
-			wait_queue.push((Thread *)current_running);
-			current_running->block();
+			wait_queue.push(current_cpu->current_thread);
+			current_cpu->current_thread->block();
 			do_scheduler();
 		}
 		else
@@ -172,9 +171,9 @@ class condition : public IdObject
 public:
 	void wait(mutex_lock *lock)
 	{
-		wait_queue.push((Thread *)current_running);
-		lock->release(current_running);
-		current_running->block();
+		wait_queue.push(current_cpu->current_thread);
+		lock->release(current_cpu->current_thread);
+		current_cpu->current_thread->block();
 		do_scheduler();
 		lock->acquire();
 	}
@@ -240,8 +239,8 @@ public:
 		{
 			if (msg_queue.size() >= MAX_MSG_SIZE)
 			{
-				send_wait_queue.push((Thread *)current_running);
-				current_running->block();
+				send_wait_queue.push(current_cpu->current_thread);
+				current_cpu->current_thread->block();
 				do_scheduler();
 			}
 			msg_queue.push(*p++);
@@ -257,8 +256,8 @@ public:
 		{
 			if (msg_queue.empty())
 			{
-				recv_wait_queue.push((Thread *)current_running);
-				current_running->block();
+				recv_wait_queue.push(current_cpu->current_thread);
+				current_cpu->current_thread->block();
 				do_scheduler();
 			}
 			*p++ = msg_queue.front();

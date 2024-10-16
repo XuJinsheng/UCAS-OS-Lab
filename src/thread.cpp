@@ -27,11 +27,14 @@ void WaitQueue::wakeup_all()
 	}
 }
 
-Thread *idle_thread;
-void init_pcb()
+void init_processor(size_t hartid)
 {
-	idle_thread = current_running = new Thread(nullptr, "kernel-idle");
-	idle_thread->kernel_stack_top = 0;
+	static std::atomic<size_t> cpu_id_cnt;
+	current_cpu = new CPU();
+	current_cpu->cpu_id = cpu_id_cnt++;
+	current_cpu->hartid = hartid;
+	current_cpu->idle_thread = current_cpu->current_thread = new Thread(nullptr, "kernel-idle");
+	current_cpu->idle_thread->kernel_stack_top = 0;
 }
 
 std::vector<Thread *> thread_table;
@@ -112,7 +115,7 @@ Thread *get_thread(size_t pid)
 }
 void Syscall::sys_exit(void)
 {
-	current_running->kill();
+	current_cpu->current_thread->kill();
 	do_scheduler();
 }
 int Syscall::sys_kill(size_t pid)
@@ -121,7 +124,7 @@ int Syscall::sys_kill(size_t pid)
 	if (t == nullptr)
 		return 0;
 	t->kill();
-	if (t == current_running)
+	if (t == current_cpu->current_thread)
 		do_scheduler();
 	return 1;
 }
@@ -130,14 +133,14 @@ int Syscall::sys_waitpid(size_t pid)
 	Thread *t = get_thread(pid);
 	if (t == nullptr)
 		return 0;
-	t->wait_kill_queue.push(current_running);
-	current_running->block();
+	t->wait_kill_queue.push(current_cpu->current_thread);
+	current_cpu->current_thread->block();
 	do_scheduler();
 	return pid;
 }
 int Syscall::sys_getpid()
 {
-	return current_running->pid;
+	return current_cpu->current_thread->pid;
 }
 void Syscall::sys_ps(void)
 {
@@ -170,7 +173,7 @@ int Syscall::sys_exec(const char *name, int argc, char **argv)
 	if (entry == 0)
 		return 0;
 
-	Thread *t = new Thread(current_running, name);
+	Thread *t = new Thread(current_cpu->current_thread, name);
 
 	char **argv_copy = (char **)t->alloc_user_page(1);
 	char *argv_data = (char *)(argv_copy + argc);

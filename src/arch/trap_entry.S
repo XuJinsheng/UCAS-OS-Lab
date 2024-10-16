@@ -11,9 +11,11 @@
 
 .balign 4
 user_trap_entry:
-	csrrw sp,sscratch,sp
-	// sp = current_running
-	sd x1, (USER_BASE+0)(sp)
+	// x1 = current_cpu
+	csrrw x1,sscratch,x1
+	sd sp, 8(x1)
+	// sp = current_thread
+	ld sp, 0(x1)
 	sd x3, (USER_BASE+16)(sp)
 	sd x4, (USER_BASE+24)(sp)
 	sd x5, (USER_BASE+32)(sp)
@@ -43,22 +45,24 @@ user_trap_entry:
 	sd x29, (USER_BASE+224)(sp)
 	sd x30, (USER_BASE+232)(sp)
 	sd x31, (USER_BASE+240)(sp)
-	csrr a0, sscratch
-	sd a0, (USER_BASE+8)(sp)
-	csrr a0, sstatus
-	sd a0, (USER_BASE+248)(sp)
-	csrr a0, sepc
-	sd a0, (USER_BASE+256)(sp)
-	csrr a0, scause
-	sd a0, (USER_BASE+264)(sp)
-	csrr a0, stval
-	sd a0, (USER_BASE+272)(sp)
+	ld a2, 8(x1) // scratch_for_asm = sp
+	sd a2, (USER_BASE+8)(sp)
+	csrr a1, sscratch
+	sd a1, (USER_BASE+0)(sp)
+	csrr t0, sstatus
+	sd t0, (USER_BASE+248)(sp)
+	csrr t1, sepc
+	sd t1, (USER_BASE+256)(sp)
+	csrr t2, scause
+	sd t2, (USER_BASE+264)(sp)
+	csrr t3, stval
+	sd t3, (USER_BASE+272)(sp)
 
-	mv tp, sp//current_running
-	ld sp, KERNEL_STACK_IN_THREAD(sp)//kernel_stack_top
+	mv tp, x1 // current_cpu
+	ld sp, KERNEL_STACK_IN_THREAD(sp) // kernel_stack_top
 
-	la a0, kernel_trap_entry
-	csrw stvec, a0
+	la t4, kernel_trap_entry
+	csrw stvec, t4
 
 	la a0, 0// from_kernel=false
 	csrr a1, scause
@@ -66,14 +70,14 @@ user_trap_entry:
 	call trap_handler
 
 user_trap_return:# return to user space, kernel stack is clear
-	mv sp, tp
+	ld sp, 0(tp)	// sp = current_cpu->current_thread
 	csrw sscratch, tp
-	li a0, 1<<8// set sstatus.SPP=user mode
-	csrc sstatus, a0
-	ld a0, (USER_BASE+256)(sp)
-	csrw sepc, a0
-	la a0, user_trap_entry
-	csrw stvec, a0
+	li t0, 1<<8// set sstatus.SPP=user mode
+	csrc sstatus, t0
+	ld t1, (USER_BASE+256)(sp)
+	csrw sepc, t1
+	la t2, user_trap_entry
+	csrw stvec, t2
 
 	ld x1, (USER_BASE+0)(sp)
 	ld x3, (USER_BASE+16)(sp)
@@ -138,8 +142,6 @@ kernel_trap_entry:
 	csrr a2,stval
 	call trap_handler
 
-	li a0, 1<<8	// set sstatus.SPP=kernel mode
-	csrc sstatus, a0
 	ld a0, 128(sp)
 	csrw sepc, a0
 	ld a0, 136(sp)
@@ -181,14 +183,13 @@ switch_context_entry:
 	sd s9, 80(sp)
 	sd s10, 88(sp)
 	sd s11, 96(sp)
-	ld s0, KERNEL_STACK_IN_THREAD(tp)
+	ld s0, KERNEL_STACK_IN_THREAD(a0)
 	sd s0, 104(sp)
-	sd sp, KERNEL_STACK_IN_THREAD(tp)
+	sd sp, KERNEL_STACK_IN_THREAD(a0)
 
-	mv tp,a0
-	ld sp, KERNEL_STACK_IN_THREAD(tp)
+	ld sp, KERNEL_STACK_IN_THREAD(a1)
 	ld s0, 104(sp)
-	sd s0, KERNEL_STACK_IN_THREAD(tp)
+	sd s0, KERNEL_STACK_IN_THREAD(a1)
 	ld ra, 0(sp)
 	ld s0, 8(sp)
 	ld s1, 16(sp)

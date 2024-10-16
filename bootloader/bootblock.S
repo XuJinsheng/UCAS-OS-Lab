@@ -20,14 +20,14 @@ main:
 	// fence on all memory and I/O
 	fence
     // a0 is mhartid
-	// bnez a0, secondary
+	bnez a0, secondary
 
-	// TODO: [p1-task1] call BIOS to print string "It's bootblock!"
+	// call BIOS to print string "It's bootblock!"
 	la a0,msg
 	li a7,BIOS_PUTSTR
 	call bios_func_entry
 
-	// TODO: [p1-task2] call BIOS to read kernel in SD card
+	// call BIOS to read kernel in SD card
 	la a0,0x50201000
 	la a1,kernel_size_addr
 	lh a1,0(a1)
@@ -35,16 +35,17 @@ main:
 	li a7,BIOS_SDREAD
 	call bios_func_entry
 
-
-	// TODO: [p1-task4] load task-related arguments and pass them to kernel
-	// xjs: I do not think it is goot to let bootloader to load task-related arguments, it should be done by kernel
-
-	// TODO: [p1-task2] jump to kernel to start UCAS-OS
+	// jump to kernel to start UCAS-OS
+    // a0 is mhartid
+	la a0, 0
 	j kernel
 
-	/************************************************************/
-	/* Do not touch this comment. Reserved for future projects. */
-	/************************************************************/
+secondary:
+	la t0, kernel
+	csrw stvec, t0
+	wfi
+	j kernel
+
 // while(1) --> stop here
 stop:
 	j stop

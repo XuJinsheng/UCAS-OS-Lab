@@ -9,6 +9,8 @@
 .globl _start
 .balign 4
 _start:
+    // a0 is mhartid, do not modify
+
 	/* Mask all interrupts */
 	csrw sie, zero
 	csrw sie, zero
@@ -16,20 +18,14 @@ _start:
     li gp,0
     li tp,0
 
-	/* TODO: [p1-task2] clear BSS for flat non-ELF images */
-	la t0,__bss_start
-	la t1,__BSS_END__
-	beq t0,t1,2$
-1$:
-	// make sure the bss is 8-byte aligned
-	sd zero,0(t0)
-	addi t0,t0,8
-	blt t0,t1,1$
-2$:
 
-	/* TODO: [p1-task2] setup C environment */
+	// set kernel stack = KERNEL_STACK - mhartid * 0x10000(64KB)
 	la sp,KERNEL_STACK
+	li t0, 0x10000
+	mul t0, t0, a0
+	sub sp, sp, t0
 	j main
+
 
 loop:
 	wfi
