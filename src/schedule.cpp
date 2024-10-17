@@ -9,7 +9,7 @@
 #include <thread.hpp>
 #include <time.hpp>
 
-std::queue<Thread *> ready_queue;
+std::list<Thread *> ready_queue;
 using SleepItem = std::pair<uint64_t, Thread *>;
 std::priority_queue<SleepItem, std::vector<SleepItem>, std::greater<SleepItem>> sleeping_queue;
 
@@ -47,7 +47,7 @@ void do_scheduler()
 		else
 		{
 			next_thread = ready_queue.front();
-			ready_queue.pop();
+			ready_queue.pop_front();
 		}
 	} while (next_thread->status != Thread::Status::READY);
 	Thread *from_thread = current_cpu->current_thread;
@@ -70,7 +70,7 @@ void add_ready_thread(Thread *thread)
 }
 void add_ready_thread_without_lock(Thread *thread)
 {
-	ready_queue.push(thread);
+	ready_queue.push_back(thread);
 }
 
 void Syscall::yield(void)

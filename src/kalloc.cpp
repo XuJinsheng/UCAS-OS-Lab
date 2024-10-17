@@ -1,33 +1,6 @@
 #include <assert.h>
 #include <kalloc.hpp>
 #include <spinlock.hpp>
-namespace std
-{
-void terminate() noexcept
-{
-	assert(false);
-}
-void __throw_length_error(char const *s)
-{
-	printl(s);
-	assert(false);
-}
-void __throw_bad_alloc()
-{
-	printl("bad alloc");
-	assert(false);
-}
-void __throw_bad_array_new_length()
-{
-	printl("bad array new length");
-	assert(false);
-}
-void __throw_logic_error(char const *)
-{
-	printl("logic error");
-	assert(false);
-}
-} // namespace std
 
 void *operator new(size_t size)
 {
