@@ -70,16 +70,9 @@ public:
 	user_context_reg_t user_context;
 	ptr_t kernel_stack_top; // offset 280
 
-	int cursor_x, cursor_y;
+	int cursor_x = 0, cursor_y = 0;
 	const int pid;
 
-	enum class Status
-	{
-		BLOCKED,
-		RUNNING,
-		READY,
-		EXITED,
-	} status;
 	Thread *parent;
 	std::vector<Thread *> children;
 
@@ -113,9 +106,38 @@ public:
 		obj->on_thread_unregister(this);
 		return true;
 	}
-	void block(); // need to be added to block queue manually
+
+	enum class Status
+	{
+		BLOCKED,
+		RUNNING,
+		READY,
+		EXITED,
+	};
+	std::atomic<int> status_block_cnt = 0;
+	bool status_exited = false;
+	bool status_running = false;
+
+	Status status() const
+	{
+		if (status_exited)
+			return Status::EXITED;
+		if (status_block_cnt)
+			return Status::BLOCKED;
+		if (status_running)
+			return Status::RUNNING;
+		return Status::READY;
+	}
+	void block() // need to be added to block queue manually
+	{
+		status_block_cnt++;
+	}
 	void wakeup();
 	void kill();
+	bool is_exited() const
+	{
+		return status_exited;
+	}
 };
 static_assert(offsetof(Thread, kernel_stack_top) == 280, "Thread layout for asm error");
 

@@ -1,6 +1,7 @@
 #include <arch/bios_func.h>
 #include <drivers/screen.h>
 #include <kstdio.h>
+#include <spinlock.hpp>
 #include <string.h>
 #include <thread.hpp>
 
@@ -11,6 +12,7 @@
 /* screen buffer */
 char new_screen[SCREEN_HEIGHT * SCREEN_WIDTH] = {0};
 char old_screen[SCREEN_HEIGHT * SCREEN_WIDTH] = {0};
+SpinLock screen_lock;
 
 /* cursor position */
 static void vt100_move_cursor(int x, int y)
@@ -73,6 +75,7 @@ void init_screen(void)
 
 void screen_clear(void)
 {
+	screen_lock.lock();
 	int i, j;
 	for (i = 0; i < SCREEN_HEIGHT; i++)
 	{
@@ -83,11 +86,13 @@ void screen_clear(void)
 	}
 	current_cpu->current_thread->cursor_x = 0;
 	current_cpu->current_thread->cursor_y = 0;
+	screen_lock.unlock();
 	screen_reflush();
 }
 
 void screen_move_cursor(int x, int y)
 {
+	lock_guard guard(screen_lock);
 	if (x >= SCREEN_WIDTH)
 		x = SCREEN_WIDTH - 1;
 	else if (x < 0)
@@ -106,6 +111,7 @@ void screen_write(const char *buff)
 	int i = 0;
 	int l = strlen(buff);
 
+	lock_guard guard(screen_lock);
 	for (i = 0; i < l; i++)
 	{
 		screen_write_ch(buff[i]);
@@ -120,6 +126,7 @@ void screen_write(const char *buff)
  */
 void screen_reflush(void)
 {
+	lock_guard guard(screen_lock);
 	int i, j;
 
 	/* here to reflush screen buffer to serial port */

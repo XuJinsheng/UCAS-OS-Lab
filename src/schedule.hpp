@@ -9,3 +9,4 @@ void add_ready_thread_without_lock(Thread *thread);
 void kernel_thread_first_run();
 void enable_preempt();
 void disable_preempt();
+void assert_no_preempt();

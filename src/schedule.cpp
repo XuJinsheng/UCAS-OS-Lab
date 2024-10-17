@@ -30,29 +30,35 @@ void do_scheduler()
 {
 	// check SIE clear
 	check_sleeping();
-	Thread *next_thread;
 	ready_lock.lock();
-	if (current_cpu->current_thread->status == Thread::Status::RUNNING)
+	if (current_cpu->current_thread->status() == Thread::Status::RUNNING)
 	{
-		current_cpu->current_thread->status = Thread::Status::READY;
 		if (current_cpu->current_thread != current_cpu->idle_thread)
 			add_ready_thread_without_lock(current_cpu->current_thread);
 	}
-	do
-	{
-		if (ready_queue.empty())
-		{
-			next_thread = current_cpu->idle_thread;
-		}
-		else
-		{
-			next_thread = ready_queue.front();
-			ready_queue.pop_front();
-		}
-	} while (next_thread->status != Thread::Status::READY);
+
+	Thread *next_thread = nullptr;
 	Thread *from_thread = current_cpu->current_thread;
+	from_thread->status_running = false;
+
+	for (auto it = ready_queue.begin(); it != ready_queue.end(); ++it)
+	{
+		if ((*it)->status() != Thread::Status::READY)
+		{
+			it = ready_queue.erase(it);
+			continue;
+		}
+		next_thread = *it;
+		ready_queue.erase(it);
+		break;
+	}
+	if (next_thread == nullptr)
+	{
+		next_thread = current_cpu->idle_thread;
+	}
+
 	current_cpu->current_thread = next_thread;
-	next_thread->status = Thread::Status::RUNNING;
+	next_thread->status_running = true;
 	switch_context_entry(from_thread, next_thread);
 	ready_lock.unlock();
 }
@@ -96,4 +102,10 @@ void enable_preempt()
 void disable_preempt()
 {
 	csr_clear(CSR_SSTATUS, SR_SIE);
+}
+
+void assert_no_preempt()
+{
+	ptr_t sstatus = csr_read(CSR_SSTATUS);
+	assert(!(sstatus & SR_SIE));
 }

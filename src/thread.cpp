@@ -40,9 +40,7 @@ void init_processor(size_t hartid)
 SpinLock thread_global_lock;
 std::vector<Thread *> thread_table;
 
-Thread::Thread(Thread *parent, std::string name)
-	: user_context(), cursor_x(0), cursor_y(0), pid(thread_table.size()), status(Status::READY), parent(parent),
-	  name(name)
+Thread::Thread(Thread *parent, std::string name) : user_context(), pid(thread_table.size()), parent(parent), name(name)
 {
 	thread_global_lock.lock();
 	thread_table.push_back(this);
@@ -67,33 +65,28 @@ void *Thread::alloc_user_page(size_t numPage)
 	thread_own_lock.unlock();
 	return ret;
 }
-void Thread::block()
-{
-	assert(status == Status::RUNNING);
-	status = Status::BLOCKED;
-}
 
 void Thread::wakeup()
 {
-	if (status == Status::EXITED)
+	if (--status_block_cnt == 0)
 	{
-		return;
+		if (!status_exited)
+		{
+			add_ready_thread(this);
+		}
 	}
-	assert(status != Status::RUNNING);
-	status = Status::READY;
-	add_ready_thread(this);
 }
 
 void Thread::kill()
 {
 	lock_guard guard(thread_own_lock);
-	status = Status::EXITED;
+	status_exited = true;
 	wait_kill_queue.wakeup_all();
 	kernel_objects.foreach ([this](KernelObject *obj) { obj->on_thread_unregister(this); });
 	if (parent != nullptr)
 	{
 		for (Thread *child : children)
-			if (child->status != Status::EXITED)
+			if (!is_exited())
 			{
 				child->parent = parent;
 				parent->children.push_back(child);
@@ -118,7 +111,7 @@ Thread *get_thread(size_t pid)
 	lock_guard guard(thread_global_lock);
 	if (pid >= thread_table.size())
 		return nullptr;
-	if (thread_table[pid]->status == Thread::Status::EXITED)
+	if (thread_table[pid]->is_exited())
 		return nullptr;
 	return thread_table[pid];
 }
@@ -161,7 +154,7 @@ void Syscall::sys_ps(void)
 	for (Thread *t : thread_table)
 	{
 		const char *status = "";
-		switch (t->status)
+		switch (t->status())
 		{
 		case Thread::Status::BLOCKED:
 			status = "BLOCKED";
