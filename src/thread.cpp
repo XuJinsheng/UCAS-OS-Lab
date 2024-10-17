@@ -27,9 +27,9 @@ void WaitQueue::wakeup_all()
 	}
 }
 
+static std::atomic<size_t> cpu_id_cnt;
 void init_processor(size_t hartid)
 {
-	static std::atomic<size_t> cpu_id_cnt;
 	current_cpu = new CPU();
 	current_cpu->cpu_id = cpu_id_cnt++;
 	current_cpu->hartid = hartid;
@@ -152,7 +152,7 @@ int Syscall::sys_getpid()
 void Syscall::sys_ps(void)
 {
 	thread_global_lock.lock();
-	printk("[Process Table], %d total\n", thread_table.size());
+	printk("[Process Table], %ld CPUs, %ld threads\n", cpu_id_cnt.load(), thread_table.size());
 	printk("| PID | status   | cpu |  mask  | name             |\n");
 	for (Thread *t : thread_table)
 	{

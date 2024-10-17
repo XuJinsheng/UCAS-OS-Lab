@@ -1,4 +1,5 @@
 #include <biosdef.h>
+#include <CSR.h>
 
 // os size location (os_size could be sectors [p1-task3] or bytes [p1-task4])
 .equ os_size_loc, 0x502001fc
@@ -38,13 +39,16 @@ main:
 	// jump to kernel to start UCAS-OS
     // a0 is mhartid
 	la a0, 0
+	wfi
 	j kernel
 
 secondary:
+	csrwi sie, SIE_SSIE
+	csrsi sstatus, SR_SIE
 	la t0, kernel
 	csrw stvec, t0
 	wfi
-	j kernel
+	j secondary
 
 // while(1) --> stop here
 stop:
@@ -54,4 +58,5 @@ stop:
 .data
 
 msg: .string "It's Xujinsheng's bootloader...\n\r"
+msgs: .string "It's secondary bootblock!\n\r"
 
