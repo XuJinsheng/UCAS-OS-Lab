@@ -70,13 +70,8 @@ public:
 	user_context_reg_t user_context;
 	ptr_t kernel_stack_top; // offset 280
 
-	int cursor_x = 0, cursor_y = 0;
-	const int pid;
+	SpinLock thread_own_lock;
 
-	Thread *parent;
-	std::vector<Thread *> children;
-
-	const std::string name;
 	Thread(Thread *parent, std::string name);
 	~Thread() = default;
 	Thread(const Thread &) = delete;
@@ -87,7 +82,13 @@ private:
 	std::queue<void *> user_memory;
 
 public:
-	SpinLock thread_own_lock;
+	int cursor_x = 0, cursor_y = 0;
+	const int pid;
+	const std::string name;
+
+	Thread *parent;
+	std::vector<Thread *> children;
+
 	WaitQueue wait_kill_queue;
 	void *alloc_user_page(size_t numPage);
 	bool register_kernel_object(KernelObject *obj) // true: insert success, false: already exists
@@ -107,6 +108,7 @@ public:
 		return true;
 	}
 
+public:
 	enum class Status
 	{
 		BLOCKED,
@@ -117,6 +119,9 @@ public:
 	std::atomic<int> status_block_cnt = 0;
 	bool status_exited = false;
 	bool status_running = false;
+
+	size_t cpu_mask = -1;
+	CPU *running_cpu = nullptr;
 
 	Status status() const
 	{

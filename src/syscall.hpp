@@ -47,5 +47,6 @@ void sys_exit(void);
 int sys_kill(size_t pid);
 int sys_waitpid(size_t pid);
 int sys_getpid();
+void sys_task_set(size_t pid, long mask);
 
 } // namespace Syscall

@@ -14,6 +14,7 @@
 #define SYSCALL_PS 5
 #define SYSCALL_GETPID 6
 #define SYSCALL_YIELD 7
+#define SYSCALL_TASKSET 8
 #define SYSCALL_WRITE 20
 #define SYSCALL_READCH 21
 #define SYSCALL_MOVE_CURSOR 22
@@ -55,6 +56,7 @@ void init_syscall()
 	syscall_table[SYSCALL_PS] = (syscall_func)Syscall::sys_ps;
 	syscall_table[SYSCALL_GETPID] = (syscall_func)Syscall::sys_getpid;
 	syscall_table[SYSCALL_YIELD] = (syscall_func)Syscall::yield;
+	syscall_table[SYSCALL_TASKSET] = (syscall_func)Syscall::sys_task_set;
 	syscall_table[SYSCALL_WRITE] = (syscall_func)Syscall::write;
 	syscall_table[SYSCALL_READCH] = (syscall_func)Syscall::sys_getchar;
 	syscall_table[SYSCALL_MOVE_CURSOR] = (syscall_func)Syscall::move_cursor;

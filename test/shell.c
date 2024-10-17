@@ -102,6 +102,45 @@ int main(void)
 				}
 			}
 		}
+		else if (strcmp(argv[0], "taskset") == 0)
+		{
+			if (strcmp(argv[1], "-p") == 0)
+			{
+				if (argc < 4)
+				{
+					printf("taskset -p: lack of arguments\n");
+				}
+				else
+				{
+					long mask = atoi(argv[2]);
+					int pid = atoi(argv[3]);
+					sys_task_set(pid, mask);
+				}
+			}
+			else
+			{
+				if (argc < 3)
+				{
+					printf("taskset: lack of arguments\n");
+				}
+				else
+				{
+					long mask = atoi(argv[1]);
+					if (mask == 0)
+					{
+						printf("taskset: mask should not be zero\n");
+					}
+					else
+					{
+						sys_task_set(0, mask);
+						int pid = sys_exec(argv[2], argc - 2, argv + 2);
+						if (pid == 0)
+							printf("exec: command not found\n");
+						sys_task_set(0, -1);
+					}
+				}
+			}
+		}
 		else if (strcmp(argv[0], "kill") == 0)
 		{
 			if (argc < 2)

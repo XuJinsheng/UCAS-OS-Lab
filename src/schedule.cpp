@@ -48,6 +48,8 @@ void do_scheduler()
 			it = ready_queue.erase(it);
 			continue;
 		}
+		if (!((*it)->cpu_mask & (1 << current_cpu->cpu_id)))
+			continue;
 		next_thread = *it;
 		ready_queue.erase(it);
 		break;
@@ -58,6 +60,8 @@ void do_scheduler()
 	}
 
 	current_cpu->current_thread = next_thread;
+	from_thread->running_cpu = nullptr;
+	next_thread->running_cpu = current_cpu;
 	next_thread->status_running = true;
 	switch_context_entry(from_thread, next_thread);
 	ready_lock.unlock();

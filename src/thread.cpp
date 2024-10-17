@@ -40,12 +40,15 @@ void init_processor(size_t hartid)
 SpinLock thread_global_lock;
 std::vector<Thread *> thread_table;
 
-Thread::Thread(Thread *parent, std::string name) : user_context(), pid(thread_table.size()), parent(parent), name(name)
+Thread::Thread(Thread *parent, std::string name) : user_context(), pid(thread_table.size()), name(name), parent(parent)
 {
 	thread_global_lock.lock();
 	thread_table.push_back(this);
 	if (parent != nullptr)
+	{
 		parent->children.push_back(this);
+		cpu_mask = parent->cpu_mask;
+	}
 
 	user_context.regs[1] = (ptr_t)alloc_user_page(2) + PAGE_SIZE * 2;
 	kernel_stack_top = (ptr_t)allocKernelPage(2) + PAGE_SIZE * 2;
@@ -150,7 +153,7 @@ void Syscall::sys_ps(void)
 {
 	thread_global_lock.lock();
 	printk("[Process Table], %d total\n", thread_table.size());
-	int index = 0;
+	printk("| PID | status   | cpu |  mask  | name             |\n");
 	for (Thread *t : thread_table)
 	{
 		const char *status = "";
@@ -160,16 +163,17 @@ void Syscall::sys_ps(void)
 			status = "BLOCKED";
 			break;
 		case Thread::Status::READY:
-			status = "READY";
+			status = " READY ";
 			break;
 		case Thread::Status::RUNNING:
 			status = "RUNNING";
 			break;
 		case Thread::Status::EXITED:
-			status = "EXITED";
+			status = "EXITED ";
 			break;
 		}
-		printk("[%d]:pid=%d,\t status=%s,\t name=%s\n", ++index, t->pid, status, t->name.c_str());
+		printk("| %3d | %s  | %3d |  %4x  | %15s |\n", t->pid, status, t->running_cpu ? t->running_cpu->cpu_id : 0,
+			   t->cpu_mask & 0xffff, t->name.c_str());
 	}
 	thread_global_lock.unlock();
 }
@@ -197,4 +201,12 @@ int Syscall::sys_exec(const char *name, int argc, char **argv)
 	add_ready_thread(t);
 
 	return t->pid;
+}
+
+void Syscall::sys_task_set(size_t pid, long mask)
+{
+	Thread *t = pid == 0 ? current_cpu->current_thread : get_thread(pid);
+	if (t == nullptr)
+		return;
+	t->cpu_mask = mask;
 }
