@@ -45,6 +45,8 @@ DEFINE_SYSCALL(sys_mbox_open, SYSCALL_MBOX_OPEN)
 DEFINE_SYSCALL(sys_mbox_close, SYSCALL_MBOX_CLOSE)
 DEFINE_SYSCALL(sys_mbox_send, SYSCALL_MBOX_SEND)
 DEFINE_SYSCALL(sys_mbox_recv, SYSCALL_MBOX_RECV)
+DEFINE_SYSCALL(sys_shmpageget, SYSCALL_SHM_GET)
+DEFINE_SYSCALL(sys_shmpagedt, SYSCALL_SHM_DT)
 
 
 /************************************************************/

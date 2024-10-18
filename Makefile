@@ -2,7 +2,7 @@
 # Project Information
 # -----------------------------------------------------------------------
 
-PROJECT_IDX	= 3
+PROJECT_IDX	= 4
 
 # -----------------------------------------------------------------------
 # Host Linux Variables
@@ -69,8 +69,8 @@ DIR_TEST        = ./test
 DIR_TEST_PROJ   = $(DIR_TEST)/test_project$(PROJECT_IDX)
 
 BOOTLOADER_ENTRYPOINT   = 0x50200000
-KERNEL_ENTRYPOINT       = 0x50201000
-USER_ENTRYPOINT         = 0x52000000
+KERNEL_ENTRYPOINT       = 0xffffffc050202000
+USER_ENTRYPOINT         = 0x200000
 
 # -----------------------------------------------------------------------
 # UCAS-OS Kernel Source Files
@@ -163,7 +163,7 @@ $(ELF_BOOT): $(SRC_BOOT) riscv.lds
 	$(CC) $(CFLAGS) $(BOOT_CFLAGS) -o $@ $(SRC_BOOT) -e main
 
 $(ELF_MAIN): $(SRC_MAIN) riscv.lds
-	$(CXX) $(CXXFLAGS) $(KERNEL_CFLAGS) -o $@ $(SRC_MAIN)
+	$(CXX) $(CXXFLAGS) $(KERNEL_CFLAGS) -o $@ $(SRC_MAIN) -e _boot
 
 $(OBJ_CRT0): $(SRC_CRT0)
 	$(CC) $(CFLAGS) $(USER_CFLAGS) -I$(DIR_ARCH)/include -c $< -o $@
@@ -179,11 +179,9 @@ $(DIR_BUILD)/%.o: $(DIR_TINYLIBC)/%.S
 
 $(DIR_BUILD)/%: $(DIR_TEST_PROJ)/%.c $(OBJ_CRT0) $(LIB_TINYC) riscv.lds
 	$(CC) $(CFLAGS) $(USER_CFLAGS) -o $@ $(OBJ_CRT0) $< $(USER_LDFLAGS) -Wl,--defsym=TEXT_START=$(USER_ENTRYPOINT) -T riscv.lds
-	$(eval USER_ENTRYPOINT := $(shell python3 -c "print(hex(int('$(USER_ENTRYPOINT)', 16) + int('0x10000', 16)))"))
 
 $(DIR_BUILD)/%: $(DIR_TEST)/%.c $(OBJ_CRT0) $(LIB_TINYC) riscv.lds
 	$(CC) $(CFLAGS) $(USER_CFLAGS) -o $@ $(OBJ_CRT0) $< $(USER_LDFLAGS) -Wl,--defsym=TEXT_START=$(USER_ENTRYPOINT) -T riscv.lds
-	$(eval USER_ENTRYPOINT := $(shell python3 -c "print(hex(int('$(USER_ENTRYPOINT)', 16) + int('0x10000', 16)))"))
 
 elf: $(ELF_BOOT) $(ELF_MAIN) $(LIB_TINYC) $(ELF_USER)
 
