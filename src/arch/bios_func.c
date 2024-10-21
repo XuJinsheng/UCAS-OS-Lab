@@ -2,7 +2,7 @@
 #include <arch/biosdef.h>
 #include <common.h>
 
-#define BIOS_FUNC_ENTRY 0x50150000
+#define BIOS_FUNC_ENTRY 0xffffffc050150000
 #define IGNORE 0
 
 static long call_bios(long which, long arg0, long arg1, long arg2, long arg3, long arg4)
@@ -55,5 +55,5 @@ void bios_logging(const char *str)
 
 void bios_send_ipi(const unsigned long *hart_mask)
 {
-    call_bios((long)BIOS_SEND_IPI, (long)hart_mask, IGNORE, IGNORE, IGNORE, IGNORE);
+	call_bios((long)BIOS_SEND_IPI, (long)hart_mask, IGNORE, IGNORE, IGNORE, IGNORE);
 }

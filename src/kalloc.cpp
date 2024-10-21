@@ -148,7 +148,7 @@ public:
 
 static constexpr ptr_t SMALL_BEGIN = 0x50800000, SMALL_END = 0x51000000;
 static constexpr ptr_t PAGE_START = 0x51000000, PAGE_BEGIN = 0x50000000, PAGE_END = 0x60000000;
-static constexpr ptr_t HEAP_STORAGE_BEGIN = 0x50510000;
+static constexpr ptr_t HEAP_STORAGE_BEGIN = 0x50510000 + 4096;
 using SMALL_POOL = Allocator<128, SMALL_BEGIN, SMALL_END>;
 using PAGE_POOL = Allocator<4096, PAGE_BEGIN, PAGE_END>;
 static SMALL_POOL *ksmall;
@@ -157,11 +157,11 @@ static PAGE_POOL *kpage;
 static_assert(HEAP_STORAGE_BEGIN + sizeof(SMALL_POOL) + sizeof(PAGE_POOL) < PAGE_START, "memory layout error");
 void init_kernel_heap()
 {
-	ksmall = (SMALL_POOL *)HEAP_STORAGE_BEGIN;
+	ksmall = (SMALL_POOL *)pa2kva(HEAP_STORAGE_BEGIN);
 	kpage = (PAGE_POOL *)(ksmall + 1);
 
 	ksmall->init();
-	kpage->init(PAGE_START - PAGE_BEGIN + PAGE_SIZE); // alloced for early page root dir
+	kpage->init(PAGE_START - PAGE_BEGIN); // alloced for early page root dir
 }
 
 SpinLock alloc_lock;
@@ -179,7 +179,7 @@ void kfree(void *ptr)
 {
 	lock_guard guard(alloc_lock);
 	ptr = (void *)kva2pa((ptr_t)ptr);
-	if ((ptr_t)ptr < PAGE_BEGIN)
+	if ((ptr_t)ptr < PAGE_START)
 		ksmall->free(ptr);
 	else
 		kpage->free(ptr);

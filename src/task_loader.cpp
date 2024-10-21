@@ -18,7 +18,6 @@ struct task_info_t
 };
 
 task_info_t tasks[TASK_MAXNUM];
-bool task_loaded[TASK_MAXNUM];
 short task_num = 0;
 
 static_assert(sizeof(tasks) == SECTOR_SIZE);
@@ -44,18 +43,14 @@ bool load_task_img(int taskid, PageDir &pdir)
 	size_t va = USER_ENTRYPOINT;
 	size_t pages = block_num / 8 + block_num != 0;
 	load_lock.lock();
-	if (!task_loaded[taskid])
+	for (size_t i = 0; i < pages; i++)
 	{
-		for (size_t i = 0; i < pages; i++)
-		{
-			ptr_t kva = pdir.alloc_page_for_va(va);
-			bios_sd_read((void *)kva2pa(kva), block_num > 8 ? 8 : block_num, sdcard_id);
-			va += PAGE_SIZE;
-			sdcard_id += 8;
-			block_num -= 8;
-		}
+		ptr_t kva = pdir.alloc_page_for_va(va);
+		bios_sd_read((void *)kva2pa(kva), block_num > 8 ? 8 : block_num, sdcard_id);
+		va += PAGE_SIZE;
+		sdcard_id += 8;
+		block_num -= 8;
 	}
-	task_loaded[taskid] = true;
 	load_lock.unlock();
 	return true;
 }

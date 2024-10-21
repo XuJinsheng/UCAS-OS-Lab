@@ -56,6 +56,7 @@ void trap_handler(int from_kernel, ptr_t scause, ptr_t stval)
 	case EXC_LOAD_PAGE_FAULT:
 	case EXC_STORE_PAGE_FAULT:
 		current_cpu->current_thread->pageroot.alloc_page_for_va(stval);
+		break;
 	default:
 		handle_other(&regs);
 		break;

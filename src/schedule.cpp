@@ -63,6 +63,8 @@ void do_scheduler()
 	from_thread->running_cpu = nullptr;
 	next_thread->running_cpu = current_cpu;
 	next_thread->status_running = true;
+	next_thread->pageroot.lookup(0x200000);
+	next_thread->pageroot.enable(current_cpu->cpu_id, next_thread->pid);
 	switch_context_entry(from_thread, next_thread);
 	ready_lock.unlock();
 }

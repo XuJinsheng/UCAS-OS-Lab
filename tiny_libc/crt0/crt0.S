@@ -14,7 +14,10 @@ ENTRY(_start)
 	addi t0,t0,8
 	blt t0,t1,1$
 2$:
-    // TODO: sp is set by the kernel
+    // set sp for different thread
+    la sp, _start
+    li t0, 4096
+    sub sp, sp, t0
 
     /* enter main function */
     call main

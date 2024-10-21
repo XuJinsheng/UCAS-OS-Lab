@@ -2,8 +2,8 @@
 /*
  * Copyright (C) 2012 Regents of the University of California
  */
-
-.set KERNEL_STACK, 0x50500000
+#include <arch/CSR.h>
+.set KERNEL_STACK, 0xffffffc050500000
 
 .section ".entry_function","ax"
 .globl _start
@@ -17,12 +17,15 @@ _start:
 	csrw sip, zero
 	csrw sip, zero
 
+	li t0, SR_SUM
+	csrs sstatus, t0
+
     li gp,0
     li tp,0
 
 
 	// set kernel stack = KERNEL_STACK - mhartid * 0x10000(64KB)
-	la sp,KERNEL_STACK
+	li sp,KERNEL_STACK
 	li t0, 0x10000
 	mul t0, t0, a0
 	sub sp, sp, t0

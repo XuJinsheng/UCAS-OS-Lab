@@ -166,8 +166,8 @@ int Syscall::sys_exec(const char *name, int argc, char **argv)
 	int task_idx = find_task_idx_by_name(name);
 	if (task_idx == -1)
 		return 0;
-
 	Thread *t = new Thread(current_cpu->current_thread, name);
+	load_task_img(task_idx, t->pageroot);
 
 	char **argv_copy = (char **)t->pageroot.alloc_page_for_va(USER_ENTRYPOINT - PAGE_SIZE);
 	char *argv_data = (char *)(argv_copy + argc);

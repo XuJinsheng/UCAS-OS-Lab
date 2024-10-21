@@ -1,3 +1,5 @@
+#include <arch/CSR.h>
+
 .equ USER_BASE, 0
 .equ KERNEL_STACK_IN_THREAD, 280
 
@@ -72,7 +74,7 @@ user_trap_entry:
 user_trap_return:# return to user space, kernel stack is clear
 	ld sp, 0(tp)	// sp = current_cpu->current_thread
 	csrw sscratch, tp
-	li t0, 1<<8// set sstatus.SPP=user mode
+	li t0, SR_SPP // set sstatus.SPP=user mode
 	csrc sstatus, t0
 	ld t1, (USER_BASE+256)(sp)
 	csrw sepc, t1
