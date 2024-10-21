@@ -49,6 +49,13 @@ void bzero(void *dest, size_t len)
 	memset(dest, 0, len);
 }
 
+void bzeropage(void *dest, size_t pages)
+{
+	ptr_t *p = (ptr_t *)dest;
+	for (ptr_t *end = p + pages * 4096 / 8; p < end; p++)
+		*p = 0;
+}
+
 size_t strlen(const char *src)
 {
 	int i = 0;

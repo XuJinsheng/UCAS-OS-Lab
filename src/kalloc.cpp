@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <kalloc.hpp>
+#include <page.hpp>
 #include <spinlock.hpp>
 
 void *operator new(size_t size)
@@ -145,59 +146,41 @@ public:
 	}
 };
 
-static constexpr ptr_t KERNEL_SMALL_BEGIN = 0x50800000, KERNEL_SMALL_END = 0x51000000;
-static constexpr ptr_t KERNEL_PAGE_BEGIN = 0x51000000, KERNEL_PAGE_END = 0x52000000;
-static constexpr ptr_t USER_PAGE_START = 0x52500000, USER_PAGE_BEGIN = 0x50000000, USER_PAGE_END = 0x60000000;
+static constexpr ptr_t SMALL_BEGIN = 0x50800000, SMALL_END = 0x51000000;
+static constexpr ptr_t PAGE_START = 0x51000000, PAGE_BEGIN = 0x50000000, PAGE_END = 0x60000000;
 static constexpr ptr_t HEAP_STORAGE_BEGIN = 0x50510000;
-using KERNEL_SMALL_POOL = Allocator<128, KERNEL_SMALL_BEGIN, KERNEL_SMALL_END>;
-using KERNEL_PAGE_POOL = Allocator<4096, KERNEL_PAGE_BEGIN, KERNEL_PAGE_END>;
-using KERNEL_USER_POOL = Allocator<4096, USER_PAGE_BEGIN, USER_PAGE_END>;
-static KERNEL_SMALL_POOL *ksmall;
-static KERNEL_PAGE_POOL *kpage;
-static KERNEL_USER_POOL *upage;
+using SMALL_POOL = Allocator<128, SMALL_BEGIN, SMALL_END>;
+using PAGE_POOL = Allocator<4096, PAGE_BEGIN, PAGE_END>;
+static SMALL_POOL *ksmall;
+static PAGE_POOL *kpage;
 
+static_assert(HEAP_STORAGE_BEGIN + sizeof(SMALL_POOL) + sizeof(PAGE_POOL) < PAGE_START, "memory layout error");
 void init_kernel_heap()
 {
-	ksmall = (KERNEL_SMALL_POOL *)HEAP_STORAGE_BEGIN;
-	kpage = (KERNEL_PAGE_POOL *)(ksmall + 1);
-	upage = (KERNEL_USER_POOL *)(kpage + 1);
+	ksmall = (SMALL_POOL *)HEAP_STORAGE_BEGIN;
+	kpage = (PAGE_POOL *)(ksmall + 1);
+
 	ksmall->init();
-	kpage->init();
-	upage->init(USER_PAGE_START - USER_PAGE_BEGIN);
+	kpage->init(PAGE_START - PAGE_BEGIN + PAGE_SIZE); // alloced for early page root dir
 }
 
 SpinLock alloc_lock;
-void *kalloc(size_t size, size_t align)
+void *kalloc(size_t size)
 {
 	lock_guard guard(alloc_lock);
+	void *p;
 	if (size > 1024)
-		return kpage->alloc(size);
+		p = kpage->alloc(size);
 	else
-		return ksmall->alloc(size);
+		p = ksmall->alloc(size);
+	return (void *)pa2kva((ptr_t)p);
 }
 void kfree(void *ptr)
 {
 	lock_guard guard(alloc_lock);
-	if ((ptr_t)ptr < KERNEL_PAGE_BEGIN)
+	ptr = (void *)kva2pa((ptr_t)ptr);
+	if ((ptr_t)ptr < PAGE_BEGIN)
 		ksmall->free(ptr);
 	else
 		kpage->free(ptr);
-}
-
-void *allocKernelPage(int numPage)
-{
-	lock_guard guard(alloc_lock);
-	return kpage->alloc(numPage * 4096);
-}
-
-void *allocUserPage(int numPage)
-{
-	lock_guard guard(alloc_lock);
-	return upage->alloc(numPage * 4096);
-}
-
-void freeUserPage(void *ptr)
-{
-	lock_guard guard(alloc_lock);
-	upage->free(ptr);
 }

@@ -1,12 +1,12 @@
+#include "kalloc.hpp"
 #include <arch/bios_func.h>
 #include <assert.h>
 #include <common.h>
 #include <spinlock.hpp>
 #include <string.h>
+#include <task_loader.hpp>
 
-#define TASK_MEM_BASE 0x52000000
 #define TASK_MAXNUM 16
-#define TASK_SIZE 0x10000
 
 // ATTENTION: The size of task_info_t must be 32 bytes
 struct task_info_t
@@ -35,28 +35,38 @@ void init_task_info(void)
 	task_num = *(short *)0x502001f4;
 }
 
-uint64_t load_task_img(int taskid)
+bool load_task_img(int taskid, PageDir &pdir)
 {
-	assert(taskid < TASK_MAXNUM);
-	uint64_t entry = tasks[taskid].entry_point;
+	if (taskid >= task_num)
+		return false;
+	size_t block_num = tasks[taskid].sdcard_block_num;
+	size_t sdcard_id = tasks[taskid].sdcard_block_id;
+	size_t va = USER_ENTRYPOINT;
+	size_t pages = block_num / 8 + block_num != 0;
+	load_lock.lock();
 	if (!task_loaded[taskid])
 	{
-		load_lock.lock();
-		bios_sd_read((void *)entry, tasks[taskid].sdcard_block_num, tasks[taskid].sdcard_block_id);
-		load_lock.unlock();
+		for (size_t i = 0; i < pages; i++)
+		{
+			ptr_t kva = pdir.alloc_page_for_va(va);
+			bios_sd_read((void *)kva2pa(kva), block_num > 8 ? 8 : block_num, sdcard_id);
+			va += PAGE_SIZE;
+			sdcard_id += 8;
+			block_num -= 8;
+		}
 	}
 	task_loaded[taskid] = true;
-	return entry;
+	load_lock.unlock();
+	return true;
 }
-
-uint64_t load_task_img_by_name(const char *taskname)
+int find_task_idx_by_name(const char *taskname)
 {
 	for (int i = 0; i < task_num; i++)
 	{
 		if (strcmp(tasks[i].name, taskname) == 0)
 		{
-			return load_task_img(i);
+			return i;
 		}
 	}
-	return 0;
+	return -1;
 }

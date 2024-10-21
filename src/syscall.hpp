@@ -49,4 +49,7 @@ int sys_waitpid(size_t pid);
 int sys_getpid();
 void sys_task_set(size_t pid, long mask);
 
+// page.cpp
+void *sys_shmpageget(int key);
+void sys_shmpagedt(void *addr);
 } // namespace Syscall

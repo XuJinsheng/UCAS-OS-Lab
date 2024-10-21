@@ -10,6 +10,7 @@ void memcpy(void *dest, const void *src, size_t len);
 void memset(void *dest, uint8_t val, size_t len);
 void *memmove(void *dest, const void *src, size_t count);
 void bzero(void *dest, size_t len);
+void bzeropage(void *dest, size_t pages);
 int strcmp(const char *str1, const char *str2);
 int strncmp(const char *str1, const char *str2, size_t n);
 char *strcpy(char *dest, const char *src);

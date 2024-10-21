@@ -5,7 +5,7 @@
 .equ os_size_loc, 0x502001fc
 
 // kernel address (move kernel to here, and jmp here to start kernel)
-.equ kernel, 0x50201000
+.equ kernel, 0x50202000
 
 // BIOS function entry (jump here to use BIOS APIs)
 .equ bios_func_entry, 0x50150000
@@ -29,7 +29,7 @@ main:
 	call bios_func_entry
 
 	// call BIOS to read kernel in SD card
-	la a0,0x50201000
+	la a0,kernel
 	la a1,kernel_size_addr
 	lh a1,0(a1)
 	li a2,1
@@ -39,7 +39,6 @@ main:
 	// jump to kernel to start UCAS-OS
     // a0 is mhartid
 	la a0, 0
-	wfi
 	j kernel
 
 secondary:

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "page.hpp"
 #include <Trie.hpp>
 #include <common.h>
 #include <spinlock.hpp>
@@ -79,9 +80,9 @@ public:
 
 private:
 	TrieLookup<KernelObject *> kernel_objects;
-	std::queue<void *> user_memory;
 
 public:
+	PageDir pageroot;
 	int cursor_x = 0, cursor_y = 0;
 	const int pid;
 	const std::string name;
@@ -90,7 +91,6 @@ public:
 	std::vector<Thread *> children;
 
 	WaitQueue wait_kill_queue;
-	void *alloc_user_page(size_t numPage);
 	bool register_kernel_object(KernelObject *obj) // true: insert success, false: already exists
 	{
 		if (kernel_objects.insert((size_t)obj, obj))

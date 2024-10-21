@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <common.h>
 #include <kstdio.h>
+#include <schedule.hpp>
 #include <spinlock.hpp>
 #include <syscall.hpp>
 #include <thread.hpp>
@@ -13,7 +14,7 @@ void init_trap()
 {
 	csr_clear(CSR_SSTATUS, SR_SIE);
 	csr_clear(CSR_SSTATUS, SR_SPIE);
-	csr_set(CSR_SIE, SIE_SEIE | SIE_STIE);
+	csr_set(CSR_SIE, SIE_SEIE | SIE_STIE | SIE_SSIE);
 	csr_write(CSR_STVEC, kernel_trap_entry);
 }
 
@@ -36,7 +37,6 @@ void handle_other(user_context_reg_t *regs)
 	assert(0);
 }
 
-SpinLock trap_lock;
 void trap_handler(int from_kernel, ptr_t scause, ptr_t stval)
 {
 	user_context_reg_t &regs = current_cpu->current_thread->user_context;
@@ -49,6 +49,13 @@ void trap_handler(int from_kernel, ptr_t scause, ptr_t stval)
 	case SCAUSE_IRQ_FLAG | IRQ_S_TIMER:
 		handle_irq_timer();
 		break;
+	case SCAUSE_IRQ_FLAG | IRQ_S_SOFT:
+		do_scheduler();
+		break;
+	case EXC_INST_PAGE_FAULT:
+	case EXC_LOAD_PAGE_FAULT:
+	case EXC_STORE_PAGE_FAULT:
+		current_cpu->current_thread->pageroot.alloc_page_for_va(stval);
 	default:
 		handle_other(&regs);
 		break;

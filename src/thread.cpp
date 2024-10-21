@@ -50,23 +50,13 @@ Thread::Thread(Thread *parent, std::string name) : user_context(), pid(thread_ta
 		cpu_mask = parent->cpu_mask;
 	}
 
-	user_context.regs[1] = (ptr_t)alloc_user_page(2) + PAGE_SIZE * 2;
-	kernel_stack_top = (ptr_t)allocKernelPage(2) + PAGE_SIZE * 2;
+	kernel_stack_top = (ptr_t)kalloc(2 * PAGE_SIZE) + PAGE_SIZE * 2;
 	ptr_t *ksp = (ptr_t *)kernel_stack_top;
 	ksp -= 14;
 	ksp[0] = (ptr_t)kernel_thread_first_run;
 	ksp[13] = kernel_stack_top;
 	kernel_stack_top = (ptr_t)ksp;
 	thread_global_lock.unlock();
-}
-
-void *Thread::alloc_user_page(size_t numPage)
-{
-	void *ret = allocUserPage(numPage);
-	thread_own_lock.lock();
-	user_memory.push(ret);
-	thread_own_lock.unlock();
-	return ret;
 }
 
 void Thread::wakeup()
@@ -100,12 +90,6 @@ void Thread::kill()
 				child->parent = thread_table[0];
 				thread_table[0]->children.push_back(child);
 			}
-	}
-	while (!user_memory.empty())
-	{
-		void *mem = user_memory.front();
-		user_memory.pop();
-		freeUserPage(mem);
 	}
 }
 
@@ -179,13 +163,13 @@ void Syscall::sys_ps(void)
 }
 int Syscall::sys_exec(const char *name, int argc, char **argv)
 {
-	ptr_t entry = load_task_img_by_name(name);
-	if (entry == 0)
+	int task_idx = find_task_idx_by_name(name);
+	if (task_idx == -1)
 		return 0;
 
 	Thread *t = new Thread(current_cpu->current_thread, name);
 
-	char **argv_copy = (char **)t->alloc_user_page(1);
+	char **argv_copy = (char **)t->pageroot.alloc_page_for_va(USER_ENTRYPOINT - PAGE_SIZE);
 	char *argv_data = (char *)(argv_copy + argc);
 	for (int i = 0; i < argc; i++)
 	{
@@ -195,7 +179,7 @@ int Syscall::sys_exec(const char *name, int argc, char **argv)
 		argv_data += len;
 	}
 
-	t->user_context.sepc = entry;
+	t->user_context.sepc = USER_ENTRYPOINT;
 	t->user_context.regs[9] = argc;
 	t->user_context.regs[10] = (ptr_t)argv_copy;
 	add_ready_thread(t);

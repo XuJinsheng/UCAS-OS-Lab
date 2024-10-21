@@ -42,6 +42,8 @@
 #define SYSCALL_MBOX_CLOSE 53
 #define SYSCALL_MBOX_SEND 54
 #define SYSCALL_MBOX_RECV 55
+#define SYSCALL_SHM_GET 56
+#define SYSCALL_SHM_DT 57
 
 typedef ptr_t (*syscall_func)(ptr_t a0, ptr_t a1, ptr_t a2, ptr_t a3, ptr_t a4, ptr_t a5, ptr_t a6);
 constexpr int SYSCALL_NUM = 96;
