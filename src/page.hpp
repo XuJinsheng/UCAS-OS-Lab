@@ -35,6 +35,26 @@ struct [[gnu::packed]] alignas(size_t) PageEntry
 	ptr_t ppn : 44;
 	ptr_t Reseverd1 : 10 = 0;
 
+	void set_as_leaf(ptr_t pa)
+	{
+		V = 1;
+		XWR = PageAttr::RWX;
+		U = 1;
+		G = 0;
+		A = D = 1;
+		ppn = pa >> 12;
+		Reseverd1 = 0;
+	}
+	void set_as_dir(ptr_t pa)
+	{
+		V = 1;
+		XWR = PageAttr::Noleaf;
+		U = 0;
+		G = 0;
+		A = D = 0;
+		ppn = pa >> 12;
+		Reseverd1 = 0;
+	}
 	ptr_t to_pa()
 	{
 		return ppn << 12;

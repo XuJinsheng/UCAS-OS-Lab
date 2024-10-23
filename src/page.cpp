@@ -61,10 +61,11 @@ void ARRTIBUTE_BOOTKERNEL setup_vm()
 	early_pgdir[get_vpn(base, 2)] = PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .ppn = base >> 12};
 	early_pgdir[get_vpn(pa2kva(base), 2)] = PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .ppn = base >> 12};
 }
-void ARRTIBUTE_BOOTKERNEL clear_temp_vm(PageEntry root[512])
+void set_kernel_vm(PageEntry root[512])
 {
+	bzeropage(root, 1);
 	constexpr ptr_t base = 0x40000000;
-	root[get_vpn(base, 2)] = (PageEntry)0;
+	root[get_vpn(pa2kva(base), 2)] = PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .ppn = base >> 12};
 }
 
 extern uintptr_t _start[];
@@ -85,8 +86,7 @@ extern "C" int ARRTIBUTE_BOOTKERNEL boot_kernel(unsigned long mhartid)
 PageDir::PageDir()
 {
 	root = (PageEntry *)kalloc(PAGE_SIZE);
-	memcpy(root, (void *)pa2kva(PGDIR_PA), 4096);
-	clear_temp_vm(root);
+	set_kernel_vm(root);
 }
 static void delDirRecur(PageEntry *pte)
 {
@@ -123,7 +123,7 @@ PageEntry *PageDir::lookup(ptr_t va)
 	{
 		ptr_t pdir = (ptr_t)kalloc(PAGE_SIZE);
 		bzeropage((void *)pdir, 1);
-		*pte = PageEntry{.XWR = PageAttr::Noleaf, .ppn = kva2pa(pdir) >> 12};
+		pte->set_as_dir(kva2pa(pdir));
 	}
 	pte = ((PageEntry *)(pte->to_kva())) + get_vpn(va, 1);
 	if (pte->XWR != PageAttr::Noleaf)
@@ -132,7 +132,7 @@ PageEntry *PageDir::lookup(ptr_t va)
 	{
 		ptr_t pdir = (ptr_t)kalloc(PAGE_SIZE);
 		bzeropage((void *)pdir, 1);
-		*pte = PageEntry{.XWR = PageAttr::Noleaf, .ppn = kva2pa(pdir) >> 12};
+		pte->set_as_dir(kva2pa(pdir));
 	}
 	pte = ((PageEntry *)(pte->to_kva())) + get_vpn(va, 0);
 	return pte;
@@ -141,7 +141,7 @@ void PageDir::map_va_kva(ptr_t va, ptr_t kva)
 {
 	PageEntry *pte = lookup(va);
 	assert(pte->V == false);
-	*pte = PageEntry{.XWR = PageAttr::RWX, .ppn = kva2pa(kva) >> 12};
+	pte->set_as_leaf(kva2pa(kva));
 	flush_mask = -1;
 }
 
