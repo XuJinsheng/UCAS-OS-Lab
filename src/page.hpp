@@ -33,7 +33,7 @@ struct [[gnu::packed]] alignas(size_t) PageEntry
 	ptr_t D : 1 = 1;
 	ptr_t RSW : 2 = 0;
 	ptr_t ppn : 44;
-	ptr_t Reseverd1 : 9 = 0;
+	ptr_t Reseverd1 : 10 = 0;
 
 	ptr_t to_pa()
 	{
@@ -56,6 +56,6 @@ public:
 	void enable(int cpu_id, int asid);
 	void flushcpu(int cpu_id, int asid);
 	PageEntry *lookup(ptr_t va);
-	void map_va_kva(ptr_t va, ptr_t kva);
-	ptr_t alloc_page_for_va(ptr_t va); // return kva
+	void map_va_kva(ptr_t va, ptr_t kva); // require va is not mapped
+	ptr_t alloc_page_for_va(ptr_t va);	  // return kva
 };

@@ -1,4 +1,5 @@
 #include <arch/CSR.h>
+#include <assert.h>
 #include <common.h>
 #include <kalloc.hpp>
 #include <page.hpp>
@@ -136,16 +137,19 @@ PageEntry *PageDir::lookup(ptr_t va)
 	pte = ((PageEntry *)(pte->to_kva())) + get_vpn(va, 0);
 	return pte;
 }
-// return new alloced address for the va, address is in va
 void PageDir::map_va_kva(ptr_t va, ptr_t kva)
 {
 	PageEntry *pte = lookup(va);
+	assert(pte->V == false);
 	*pte = PageEntry{.XWR = PageAttr::RWX, .ppn = kva2pa(kva) >> 12};
 	flush_mask = -1;
 }
 
 ptr_t PageDir::alloc_page_for_va(ptr_t va)
 {
+	PageEntry *pte = lookup(va);
+	if (pte->V)
+		return (ptr_t)pte->to_kva();
 	ptr_t kva = (ptr_t)kalloc(PAGE_SIZE);
 	map_va_kva(va, kva);
 	return kva;

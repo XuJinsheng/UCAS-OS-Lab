@@ -50,7 +50,7 @@ Thread::Thread(Thread *parent, std::string name) : user_context(), pid(thread_ta
 		cpu_mask = parent->cpu_mask;
 	}
 
-	kernel_stack_top = (ptr_t)kalloc(2 * PAGE_SIZE) + PAGE_SIZE * 2;
+	kernel_stack_top = (ptr_t)kalloc(16 * PAGE_SIZE) + PAGE_SIZE * 16;
 	ptr_t *ksp = (ptr_t *)kernel_stack_top;
 	ksp -= 14;
 	ksp[0] = (ptr_t)kernel_thread_first_run;

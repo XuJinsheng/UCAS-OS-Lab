@@ -50,6 +50,7 @@ void trap_handler(int from_kernel, ptr_t scause, ptr_t stval)
 		handle_irq_timer();
 		break;
 	case SCAUSE_IRQ_FLAG | IRQ_S_SOFT:
+		csr_clear(CSR_SIP, SIE_SSIE);
 		do_scheduler();
 		break;
 	case EXC_INST_PAGE_FAULT:
