@@ -48,6 +48,11 @@ DEFINE_SYSCALL(sys_mbox_recv, SYSCALL_MBOX_RECV)
 DEFINE_SYSCALL(sys_shmpageget, SYSCALL_SHM_GET)
 DEFINE_SYSCALL(sys_shmpagedt, SYSCALL_SHM_DT)
 
+DEFINE_SYSCALL(sys_create_thread, SYSCALL_CREATE_THREAD)
+DEFINE_SYSCALL(sys_wait_thread, SYSCALL_WAIT_THREAD)
+DEFINE_SYSCALL(sys_exit_thread, SYSCALL_EXIT_THREAD)
+DEFINE_SYSCALL(sys_kill_thread, SYSCALL_KILL_THREAD)
+
 
 /************************************************************/
 /* Do not touch this comment. Reserved for future projects. */

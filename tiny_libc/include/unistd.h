@@ -43,6 +43,10 @@ int sys_mbox_recv(int mbox_idx, void *msg, int msg_length);
 void sys_task_set(pid_t pid, long mask);
 
 /************************************************************/
+size_t sys_create_thread(void (*start_routine)(void *), void *arg);
+void sys_wait_thread(size_t tid);
+void sys_exit_thread(void);
+void sys_kill_thread(size_t tid);
 void *sys_shmpageget(int key);
 void sys_shmpagedt(void *addr);
 

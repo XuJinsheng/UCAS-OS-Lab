@@ -43,7 +43,7 @@ secondary:
 
 finish:
     /* finish task and return to the kernel */
-    call sys_exit
+    call sys_exit_thread
 
     /************************************************************/
     /* Do not touch this comment. Reserved for future projects. */
