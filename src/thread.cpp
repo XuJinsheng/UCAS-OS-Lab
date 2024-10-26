@@ -5,58 +5,26 @@
 #include <schedule.hpp>
 #include <string.h>
 #include <syscall.hpp>
-#include <task_loader.hpp>
 #include <thread.hpp>
-
-Thread *WaitQueue::wakeup_one()
-{
-	if (que.empty())
-		return nullptr;
-	Thread *t = que.front();
-	que.pop();
-	t->wakeup();
-	return t;
-}
-void WaitQueue::wakeup_all()
-{
-	while (!que.empty())
-	{
-		Thread *t = que.front();
-		que.pop();
-		t->wakeup();
-	}
-}
-
-static std::atomic<size_t> cpu_id_cnt;
-void init_processor(size_t hartid)
-{
-	current_cpu = new CPU();
-	current_cpu->cpu_id = cpu_id_cnt++;
-	current_cpu->hartid = hartid;
-	current_cpu->idle_thread = current_cpu->current_thread = new Thread(nullptr, "kernel-idle");
-	current_cpu->idle_thread->kernel_stack_top = 0;
-}
 
 SpinLock thread_global_lock;
 std::vector<Thread *> thread_table;
 
-Thread::Thread(Thread *parent, std::string name) : user_context(), pid(thread_table.size()), name(name), parent(parent)
+Thread::Thread(Process *process, size_t trank)
+	: user_context(), process(process), tid(thread_table.size()), trank(trank)
 {
 	thread_global_lock.lock();
 	thread_table.push_back(this);
-	if (parent != nullptr)
-	{
-		parent->children.push_back(this);
-		cpu_mask = parent->cpu_mask;
-	}
+	thread_global_lock.unlock();
 
-	kernel_stack_top = (ptr_t)kalloc(16 * PAGE_SIZE) + PAGE_SIZE * 16;
+	user_context.regs[16] = trank; // a7
+
+	kernel_stack_top = (ptr_t)kalloc(2 * PAGE_SIZE) + PAGE_SIZE * 2;
 	ptr_t *ksp = (ptr_t *)kernel_stack_top;
 	ksp -= 14;
 	ksp[0] = (ptr_t)kernel_thread_first_run;
 	ksp[13] = kernel_stack_top;
 	kernel_stack_top = (ptr_t)ksp;
-	thread_global_lock.unlock();
 }
 
 void Thread::wakeup()
@@ -70,26 +38,21 @@ void Thread::wakeup()
 	}
 }
 
-void Thread::kill()
+void Thread::exit()
 {
-	lock_guard guard(thread_own_lock);
+	if (status_exited)
+		return;
+	thread_own_lock.lock();
 	status_exited = true;
-	wait_kill_queue.wakeup_all();
-	kernel_objects.foreach ([this](KernelObject *obj) { obj->on_thread_unregister(this); });
-	if (parent != nullptr)
+	wait_exited_queue.wakeup_all();
+	thread_own_lock.unlock();
+	if (--process->active_thread_cnt == 0)
 	{
-		for (Thread *child : children)
-			if (!is_exited())
-			{
-				child->parent = parent;
-				parent->children.push_back(child);
-			}
-			else
-			{
-				// TODO: where to place dead child? delete maybe cause pointer invalid
-				child->parent = thread_table[0];
-				thread_table[0]->children.push_back(child);
-			}
+		process->kill();
+	}
+	if (this == current_cpu->current_thread)
+	{
+		do_scheduler();
 	}
 }
 
@@ -98,48 +61,42 @@ Thread *get_thread(size_t pid)
 	lock_guard guard(thread_global_lock);
 	if (pid >= thread_table.size())
 		return nullptr;
-	if (thread_table[pid]->is_exited())
+	if (thread_table[pid]->has_exited())
 		return nullptr;
 	return thread_table[pid];
 }
-void Syscall::sys_exit(void)
+
+void Syscall::sys_exit_thread(void)
 {
-	current_cpu->current_thread->kill();
-	do_scheduler();
+	current_cpu->current_thread->exit();
 }
-int Syscall::sys_kill(size_t pid)
+
+void Syscall::sys_kill_thread(size_t tid)
 {
-	Thread *t = get_thread(pid);
+	Thread *t = get_thread(tid);
 	if (t == nullptr)
-		return 0;
-	t->kill();
-	if (t == current_cpu->current_thread)
-		do_scheduler();
-	return 1;
+		return;
+	t->exit();
 }
-int Syscall::sys_waitpid(size_t pid)
+void Syscall::sys_wait_thread(size_t tid)
 {
-	Thread *t = get_thread(pid);
+	Thread *t = get_thread(tid);
 	if (t == nullptr)
-		return 0;
-	t->thread_own_lock.lock();
-	t->wait_kill_queue.push(current_cpu->current_thread);
-	t->thread_own_lock.unlock();
+		return;
+	t->wait_exited_queue.push(current_cpu->current_thread);
 	current_cpu->current_thread->block();
 	do_scheduler();
-	return pid;
 }
-int Syscall::sys_getpid()
-{
-	return current_cpu->current_thread->pid;
-}
-void Syscall::sys_ps(void)
+
+void print_threads(bool killed)
 {
 	thread_global_lock.lock();
-	printk("[Process Table], %ld CPUs, %ld threads\n", cpu_id_cnt.load(), thread_table.size());
-	printk("| PID | status   | cpu |  mask  | name             |\n");
+	printk("[Thread Table], %ld threads\n", thread_table.size());
+	printk("| TID | PID | status   | name             |\n");
 	for (Thread *t : thread_table)
 	{
+		if (!killed && t->has_exited())
+			continue;
 		const char *status = "";
 		switch (t->status())
 		{
@@ -156,41 +113,7 @@ void Syscall::sys_ps(void)
 			status = "EXITED ";
 			break;
 		}
-		printk("| %3d | %s  | %3d |  %4x  | %15s |\n", t->pid, status, t->running_cpu ? t->running_cpu->cpu_id : 0,
-			   t->cpu_mask & 0xffff, t->name.c_str());
+		printk("| %3d | %3d | %s | %15s |\n", t->tid, t->process->pid, status, t->process->name.c_str());
 	}
 	thread_global_lock.unlock();
-}
-int Syscall::sys_exec(const char *name, int argc, char **argv)
-{
-	int task_idx = find_task_idx_by_name(name);
-	if (task_idx == -1)
-		return 0;
-	Thread *t = new Thread(current_cpu->current_thread, name);
-	load_task_img(task_idx, t->pageroot);
-
-	char **argv_copy = (char **)t->pageroot.alloc_page_for_va(USER_ENTRYPOINT - PAGE_SIZE);
-	char *argv_data = (char *)(argv_copy + argc);
-	for (int i = 0; i < argc; i++)
-	{
-		size_t len = strlen(argv[i]) + 1;
-		memcpy(argv_data, argv[i], len);
-		argv_copy[i] = argv_data;
-		argv_data += len;
-	}
-
-	t->user_context.sepc = USER_ENTRYPOINT;
-	t->user_context.regs[9] = argc;
-	t->user_context.regs[10] = (ptr_t)argv_copy;
-	add_ready_thread(t);
-
-	return t->pid;
-}
-
-void Syscall::sys_task_set(size_t pid, long mask)
-{
-	Thread *t = pid == 0 ? current_cpu->current_thread : get_thread(pid);
-	if (t == nullptr)
-		return;
-	t->cpu_mask = mask;
 }

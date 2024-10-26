@@ -18,7 +18,7 @@ void sys_mutex_acquire(int mutex_idx);
 void sys_mutex_release(int mutex_idx);
 
 /************************************************************/
-void sys_ps(void);
+void sys_ps(int process, int killed);
 int sys_getchar(void);
 pid_t sys_exec(char *name, int argc, char **argv);
 void sys_exit(void);

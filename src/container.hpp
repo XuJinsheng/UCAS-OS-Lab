@@ -3,6 +3,46 @@
 #include <assert.h>
 #include <common.h>
 
+class Thread;
+class Process;
+
+class KernelObject
+{
+private:
+	friend Process;
+	std::atomic<size_t> ref_count = 0;
+
+public:
+	KernelObject() = default;
+	KernelObject(const KernelObject &) = delete;
+	KernelObject &operator=(const KernelObject &) = delete;
+	virtual ~KernelObject() = default;
+	virtual void on_process_unregister(Process *)
+	{
+		if (--ref_count == 0)
+		{
+			delete this;
+		}
+	}
+};
+
+class WaitQueue
+{
+	std::queue<Thread *> que;
+
+public:
+	void push(Thread *t)
+	{
+		que.push(t);
+	}
+	Thread *wakeup_one();
+	void wakeup_all();
+	~WaitQueue()
+	{
+		wakeup_all();
+	}
+};
+
 template <class T> class TrieLookup // require T is a pointer type
 {
 private:

@@ -39,7 +39,7 @@ void do_scheduler()
 
 	Thread *next_thread = nullptr;
 	Thread *from_thread = current_cpu->current_thread;
-	from_thread->status_running = false;
+	from_thread->status_running = false; // must be clear before select ready thread
 
 	for (auto it = ready_queue.begin(); it != ready_queue.end(); ++it)
 	{
@@ -48,7 +48,7 @@ void do_scheduler()
 			it = ready_queue.erase(it);
 			continue;
 		}
-		if (!((*it)->cpu_mask & (1 << current_cpu->cpu_id)))
+		if (!((*it)->process->cpu_mask & (1 << current_cpu->cpu_id)))
 			continue;
 		next_thread = *it;
 		ready_queue.erase(it);
@@ -63,8 +63,8 @@ void do_scheduler()
 	from_thread->running_cpu = nullptr;
 	next_thread->running_cpu = current_cpu;
 	next_thread->status_running = true;
-	next_thread->pageroot.lookup(0x200000);
-	next_thread->pageroot.enable(current_cpu->cpu_id, next_thread->pid);
+	if (from_thread->process != next_thread->process)
+		next_thread->process->pageroot.enable(current_cpu->cpu_id, next_thread->process->pid);
 	switch_context_entry(from_thread, next_thread);
 	ready_lock.unlock();
 }

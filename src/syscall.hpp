@@ -40,16 +40,21 @@ long get_tick(void);
 void yield(void);
 void sleep(uint32_t time);
 
-// thread.cpp
-void sys_ps(void);
+void sys_ps(int process, int killed); // in syscall.cpp
+// process.cpp
 int sys_exec(const char *name, int argc, char **argv);
 void sys_exit(void);
 int sys_kill(size_t pid);
 int sys_waitpid(size_t pid);
 int sys_getpid();
 void sys_task_set(size_t pid, long mask);
+size_t sys_create_thread(ptr_t func, ptr_t arg);
+// thread.cpp
+void sys_exit_thread(void);
+void sys_kill_thread(size_t tid);
+void sys_wait_thread(size_t tid);
 
-// page.cpp
+// memory.cpp
 void *sys_shmpageget(int key);
 void sys_shmpagedt(void *addr);
 } // namespace Syscall

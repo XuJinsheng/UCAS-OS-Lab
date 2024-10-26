@@ -84,7 +84,16 @@ int main(void)
 		int argc = spilt();
 		if (strcmp(argv[0], "ps") == 0)
 		{
-			sys_ps();
+			int process = 1;
+			int killed = 0;
+			for (int i = 1; i < argc; i++)
+			{
+				if (strcmp(argv[i], "-t") == 0)
+					process = 0;
+				else if (strcmp(argv[i], "-k") == 0)
+					killed = 1;
+			}
+			sys_ps(process, killed);
 		}
 		else if (strcmp(argv[0], "exec") == 0)
 		{

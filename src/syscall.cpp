@@ -130,3 +130,15 @@ void Syscall::sys_clear()
 	assert_no_preempt();
 	screen_clear();
 }
+
+void Syscall::sys_ps(int process, int killed)
+{
+	if (process)
+	{
+		print_processes(killed);
+	}
+	else
+	{
+		print_threads(killed);
+	}
+}

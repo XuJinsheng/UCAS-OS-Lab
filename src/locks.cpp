@@ -1,7 +1,7 @@
 #define _NEW
-#include <Trie.hpp>
 #include <assert.h>
 #include <common.h>
+#include <container.hpp>
 #include <locks.hpp>
 #include <schedule.hpp>
 #include <spinlock.hpp>
@@ -36,7 +36,7 @@ public:
 			table.push_back(p);
 			p->trie_idx = keymap.insert(key, p);
 		}
-		current_cpu->current_thread->register_kernel_object(p);
+		current_cpu->current_thread->process->register_kernel_object(p);
 		return p->handle;
 	}
 	IdObject *get(size_t handle)
@@ -51,7 +51,7 @@ public:
 		IdObject *obj = get(handle); // lock guaranteed
 		if (obj == nullptr)
 			return;
-		current_cpu->current_thread->unregister_kernel_object(obj);
+		current_cpu->current_thread->process->unregister_kernel_object(obj);
 	}
 	void remove(IdObject *obj)
 	{
@@ -88,17 +88,17 @@ public:
 			lock.unlock();
 		owner = current_cpu->current_thread;
 	}
-	void release(Thread *t)
+	void release(Process *p)
 	{
 		lock_guard guard(lock);
-		if (owner != t)
+		if (owner->process != p)
 			return;
 		owner = wait_queue.wakeup_one();
 	}
-	virtual void on_thread_unregister(Thread *t) override
+	virtual void on_process_unregister(Process *p) override
 	{
-		release(t);
-		KernelObject::on_thread_unregister(t);
+		release(p);
+		KernelObject::on_process_unregister(p);
 	}
 	inline static IdPool pool;
 	virtual ~mutex_lock()
@@ -123,7 +123,7 @@ void Syscall::mutex_release(size_t mutex_idx)
 {
 	mutex_lock *lock = (mutex_lock *)mutex_lock::pool.get(mutex_idx);
 	if (lock)
-		lock->release(current_cpu->current_thread);
+		lock->release(current_cpu->current_thread->process);
 }
 
 class barrier : public IdObject
@@ -188,7 +188,7 @@ public:
 		lock.lock();
 		wait_queue.push(current_cpu->current_thread);
 		lock.unlock();
-		mutex->release(current_cpu->current_thread);
+		mutex->release(current_cpu->current_thread->process);
 		current_cpu->current_thread->block();
 		do_scheduler();
 		mutex->acquire();
