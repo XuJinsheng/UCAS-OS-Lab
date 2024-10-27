@@ -205,9 +205,9 @@ void print_processes(bool killed)
 	printk("| PID | threads | mask  | name             |\n");
 	for (Process *p : process_table)
 	{
-		if (!killed && p->is_killed)
+		if (p == nullptr || (!killed && p->is_killed))
 			continue;
-		printk("| %3d | %7d |  %4x  | %15s |\n", p->pid, p->active_thread_cnt.load(), p->cpu_mask & 0xffff,
+		printk("| %3d | %7d | %4x | %15s |\n", p->pid, p->active_thread_cnt.load(), p->cpu_mask & 0xffff,
 			   p->name.c_str());
 	}
 	process_global_lock.unlock();

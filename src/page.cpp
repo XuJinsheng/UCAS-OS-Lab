@@ -156,7 +156,7 @@ static void freeUserRecur(PageEntry pte[512])
 			// sdcardfree(pte[i].ppn);
 		}
 		else
-			assert(!pte[i].V);
+			assert(!pte[i].V || !pte[i].U);
 		pte[i].V = 0;
 	}
 }

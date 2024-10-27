@@ -116,4 +116,9 @@ void __throw_logic_error(char const *)
 	printl("logic error");
 	assert(false);
 }
+void __throw_bad_function_call()
+{
+	printl("bad function call");
+	assert(false);
+}
 } // namespace std

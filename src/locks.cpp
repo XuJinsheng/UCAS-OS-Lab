@@ -12,56 +12,6 @@
 void init_locks()
 {
 }
-class IdPool;
-class IdObject : public KernelObject
-{
-	size_t handle, trie_idx;
-	friend IdPool;
-};
-class IdPool
-{
-	SpinLock lock;
-	TrieLookup<IdObject *> keymap;
-	std::vector<IdObject *> table;
-
-public:
-	int64_t init(size_t key, auto create_fn)
-	{
-		lock_guard guard(lock);
-		IdObject *p = keymap.lookup(key);
-		if (p == nullptr)
-		{
-			p = create_fn();
-			p->handle = table.size();
-			table.push_back(p);
-			p->trie_idx = keymap.insert(key, p);
-		}
-		current_cpu->current_thread->process->register_kernel_object(p);
-		return p->handle;
-	}
-	IdObject *get(size_t handle)
-	{
-		lock_guard guard(lock);
-		if (handle >= table.size())
-			return nullptr;
-		return table[handle]; // may be nullptr
-	}
-	void close(size_t handle)
-	{
-		IdObject *obj = get(handle); // lock guaranteed
-		if (obj == nullptr)
-			return;
-		current_cpu->current_thread->process->unregister_kernel_object(obj);
-	}
-	void remove(IdObject *obj)
-	{
-		lock_guard guard(lock);
-		if (obj->handle >= table.size())
-			return;
-		table[obj->handle] = nullptr;
-		keymap.remove_by_idx(obj->trie_idx);
-	}
-};
 
 class mutex_lock : public IdObject
 {

@@ -36,6 +36,7 @@ inline void *operator new[](size_t, void *place)
 }
 #include <bits/c++config.h>
 
+#include <functional>
 #include <list>
 #include <queue>
 #include <string>

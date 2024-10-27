@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <common.h>
+#include <spinlock.hpp>
 
 class Thread;
 class Process;
@@ -119,4 +120,23 @@ public:
 			}
 		}
 	}
+};
+
+class IdPool;
+class IdObject : public KernelObject
+{
+	size_t handle, trie_idx;
+	friend IdPool;
+};
+class IdPool
+{
+	SpinLock lock;
+	TrieLookup<IdObject *> keymap;
+	std::vector<IdObject *> table;
+
+public:
+	int64_t init(size_t key, std::function<IdObject *()> create_fn);
+	IdObject *get(size_t handle);
+	void close(size_t handle);
+	void remove(IdObject *obj);
 };

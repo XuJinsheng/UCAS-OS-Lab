@@ -92,10 +92,10 @@ void print_threads(bool killed)
 {
 	thread_global_lock.lock();
 	printk("[Thread Table], %ld threads\n", thread_table.size());
-	printk("| TID | PID | status   | name             |\n");
+	printk("| TID | PID | status  | name             |\n");
 	for (Thread *t : thread_table)
 	{
-		if (!killed && t->has_exited())
+		if (t == nullptr || (!killed && t->has_exited()))
 			continue;
 		const char *status = "";
 		switch (t->status())
