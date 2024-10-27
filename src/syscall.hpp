@@ -54,7 +54,7 @@ void sys_exit_thread(void);
 void sys_kill_thread(size_t tid);
 void sys_wait_thread(size_t tid);
 
-// memory.cpp
-void *sys_shmpageget(int key);
-void sys_shmpagedt(void *addr);
+// page.cpp
+ptr_t sys_shmpageget(int key);
+void sys_shmpagedt(ptr_t va);
 } // namespace Syscall

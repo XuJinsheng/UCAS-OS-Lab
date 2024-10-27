@@ -1,10 +1,12 @@
-#include "thread.hpp"
 #include <arch/CSR.h>
 #include <assert.h>
 #include <common.h>
+#include <container.hpp>
 #include <kalloc.hpp>
 #include <page.hpp>
 #include <string.h>
+#include <syscall.hpp>
+#include <thread.hpp>
 
 typedef uint64_t PTE;
 
@@ -166,4 +168,66 @@ static void freeUserRecur(PageEntry pte[512])
 void PageDir::free_user_private_mem()
 {
 	freeUserRecur(root);
+}
+
+ptr_t PageDir::attach_shared_page(ptr_t kva)
+{
+	lock_guard guard(lock);
+	ptr_t va = shared_page_start;
+	map_va_kva(va, kva);
+	shared_page_start += PAGE_SIZE;
+	return va;
+}
+ptr_t PageDir::free_shared_page(ptr_t va)
+{
+	lock_guard guard(lock);
+	PageEntry *pte = lookup(va);
+	assert(pte->V);
+	pte->V = 0;
+	flush_mask = -1;
+	current_process->send_intr_to_running_thread();
+	return pte->to_kva();
+}
+
+class SharedPage : KernelObject
+{
+public:
+	const ptr_t key, kva;
+	ptr_t cnt;
+	SharedPage(ptr_t key) : key(key), kva((ptr_t)kalloc(PAGE_SIZE)), cnt(0)
+	{
+	}
+	~SharedPage()
+	{
+		kfree((void *)kva);
+	}
+};
+std::vector<SharedPage *> shared_pages;
+ptr_t Syscall::sys_shmpageget(int key)
+{
+	auto it = std::find_if(shared_pages.begin(), shared_pages.end(), [key](SharedPage *p) { return p->key == key; });
+	if (it == shared_pages.end())
+	{
+		shared_pages.push_back(new SharedPage(key));
+		it = shared_pages.end() - 1;
+	}
+	(*it)->cnt++;
+	return current_process->pageroot.attach_shared_page((*it)->kva);
+}
+void Syscall::sys_shmpagedt(ptr_t va)
+{
+	ptr_t kva = current_process->pageroot.free_shared_page(va);
+	for (auto it = shared_pages.begin(); it != shared_pages.end(); it++)
+	{
+		if ((*it)->kva == kva)
+		{
+			(*it)->cnt--;
+			if ((*it)->cnt == 0)
+			{
+				delete *it;
+				shared_pages.erase(it);
+			}
+			break;
+		}
+	}
 }

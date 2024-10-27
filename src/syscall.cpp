@@ -89,6 +89,8 @@ void init_syscall()
 	syscall_table[SYSCALL_MBOX_CLOSE] = (syscall_func)Syscall::sys_mbox_close;
 	syscall_table[SYSCALL_MBOX_SEND] = (syscall_func)Syscall::sys_mbox_send;
 	syscall_table[SYSCALL_MBOX_RECV] = (syscall_func)Syscall::sys_mbox_recv;
+	syscall_table[SYSCALL_SHM_GET] = (syscall_func)Syscall::sys_shmpageget;
+	syscall_table[SYSCALL_SHM_DT] = (syscall_func)Syscall::sys_shmpagedt;
 }
 
 ptr_t handle_syscall(const ptr_t args[8])

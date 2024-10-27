@@ -77,6 +77,7 @@ class PageDir
 	PageEntry *root;
 	std::atomic<size_t> flush_mask; // flush_mask[cpu_id] indicates flush
 	SpinLock lock;
+	ptr_t shared_page_start = 0x80000000;
 
 public:
 	PageDir();
@@ -87,4 +88,6 @@ public:
 	void map_va_kva(ptr_t va, ptr_t kva); // require va is not mapped
 	ptr_t alloc_page_for_va(ptr_t va);	  // return kva
 	void free_user_private_mem();
+	ptr_t attach_shared_page(ptr_t kva); // return va
+	ptr_t free_shared_page(ptr_t va);	 // return kva
 };
