@@ -41,7 +41,7 @@ bool load_task_img(int taskid, PageDir &pdir)
 	size_t block_num = tasks[taskid].sdcard_block_num;
 	size_t sdcard_id = tasks[taskid].sdcard_block_id;
 	size_t va = USER_ENTRYPOINT;
-	size_t pages = block_num / 8 + block_num != 0;
+	size_t pages = block_num / 8 + (block_num != 0);
 	load_lock.lock();
 	for (size_t i = 0; i < pages; i++)
 	{

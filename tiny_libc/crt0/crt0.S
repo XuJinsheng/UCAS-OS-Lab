@@ -2,7 +2,7 @@
 
 .section ".entry_function","ax"
 
-.equ STACK_BASE, 0x100000
+.equ STACK_BASE, 0x200000
 ENTRY(_start)
 /* a7: thread id in process
 main thread: a0: argc, a1: argv
@@ -30,11 +30,11 @@ child thread: a0: function pointer, a1: argument
     j finish
     
 secondary:
-    // set sp = STACK_BASE + 4096 * a7
+    // set sp = STACK_BASE - 4096*8 * a7
     la sp, STACK_BASE
-    li t0, 4096
+    li t0, 4096*8
     mul t0, a7, t0
-    add sp, sp, t0
+    sub sp, sp, t0
     mv t0, a0
     mv a0, a1
     jalr t0

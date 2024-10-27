@@ -163,7 +163,7 @@ int Syscall::sys_exec(const char *name, int argc, char **argv)
 	Thread *t = p->create_thread();
 	load_task_img(task_idx, p->pageroot);
 
-	constexpr ptr_t argv_va = USER_ENTRYPOINT - PAGE_SIZE;
+	constexpr ptr_t argv_va = 0x100000;
 	t->user_context.sepc = USER_ENTRYPOINT;
 	t->user_context.regs[9] = argc;
 	t->user_context.regs[10] = argv_va;
@@ -190,7 +190,7 @@ size_t Syscall::sys_create_thread(ptr_t func, ptr_t arg)
 	t->user_context.sepc = USER_ENTRYPOINT;
 	t->user_context.regs[9] = func;
 	t->user_context.regs[10] = arg;
-	add_ready_thread(t);
+	// add_ready_thread(t);
 	return t->tid;
 }
 
