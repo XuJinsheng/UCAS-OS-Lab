@@ -88,19 +88,6 @@ PageDir::PageDir()
 	root = (PageEntry *)kalloc(PAGE_SIZE);
 	set_kernel_vm(root);
 }
-static void delDirRecur(PageEntry *pte)
-{
-	for (int i = 0; i < 512; i++)
-	{
-		if (pte[i].V && pte[i].XWR == PageAttr::Noleaf)
-			delDirRecur((PageEntry *)pte[i].to_kva());
-	}
-	kfree(pte);
-}
-PageDir::~PageDir()
-{
-	delDirRecur(root);
-}
 void PageDir::enable(int cpu_id, int asid)
 {
 	set_satp(SATP_MODE_SV39, asid, kva2pa((ptr_t)root));
@@ -153,4 +140,27 @@ ptr_t PageDir::alloc_page_for_va(ptr_t va)
 	ptr_t kva = (ptr_t)kalloc(PAGE_SIZE);
 	map_va_kva(va, kva);
 	return kva;
+}
+static void freeUserRecur(PageEntry pte[512])
+{
+	for (int i = 0; i < 512; i++)
+	{
+		if (pte[i].V && pte[i].XWR == PageAttr::Noleaf)
+			freeUserRecur((PageEntry *)pte[i].to_kva());
+		else if (pte[i].V && pte[i].U && pte[i].OSflag == PageOSFlag::Normal)
+		{
+			kfree((void *)pte[i].to_kva());
+		}
+		else if (pte[i].V && pte[i].U && pte[i].OSflag == PageOSFlag::Swapped)
+		{
+			// sdcardfree(pte[i].ppn);
+		}
+		else
+			assert(!pte[i].V);
+		pte[i].V = 0;
+	}
+}
+void PageDir::free_user_private_mem()
+{
+	freeUserRecur(root);
 }

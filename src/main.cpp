@@ -74,10 +74,8 @@ int main(int hartid)
 	// Infinite while loop, where CPU stays in a low-power state (QAQQQQQQQQQQQ)
 	while (1)
 	{
-		// If you do non-preemptive scheduling, it's used to surrender control
-		// do_scheduler();
-
-		// If you do preemptive scheduling, they're used to enable CSR_SIE and wfi
+		disable_preempt();
+		idle_cleanup();
 		enable_preempt();
 		asm volatile("wfi");
 	}

@@ -64,3 +64,4 @@ public:
 extern Process *idle_process;
 extern void init_processor(size_t hartid);
 extern void print_processes(bool killed);
+extern void idle_cleanup();

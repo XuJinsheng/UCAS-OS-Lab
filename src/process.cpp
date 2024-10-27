@@ -46,11 +46,15 @@ Process::Process(Process *parent, std::string name) : pid(process_table.size()),
 	process_global_lock.unlock();
 }
 
-Process::~Process()
+Process::~Process() // under both global and private lock
 {
-	process_global_lock.lock();
-	process_table[pid] = nullptr;
-	process_global_lock.unlock();
+	assert(is_killed);
+	for (Thread *t : threads)
+	{
+		assert(t->has_exited());
+		delete t;
+	}
+	pageroot.free_user_private_mem();
 }
 
 void Process::kill()
@@ -207,4 +211,23 @@ void print_processes(bool killed)
 			   p->name.c_str());
 	}
 	process_global_lock.unlock();
+}
+
+void idle_cleanup()
+{
+	static std::atomic_flag cleanup_lock = false;
+	if (cleanup_lock.test_and_set())
+		return;
+	process_global_lock.lock();
+	for (auto &p : process_table)
+	{
+		if (p != nullptr && p->is_killed)
+		{
+			p->process_own_lock.lock();
+			delete p;
+			p = nullptr;
+		}
+	}
+	process_global_lock.unlock();
+	cleanup_lock.clear();
 }

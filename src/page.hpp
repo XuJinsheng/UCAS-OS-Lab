@@ -23,6 +23,14 @@ enum class PageAttr
 	RWX = 0b111
 };
 
+enum class PageOSFlag
+{
+	Normal = 0,
+	Shared = 1,
+	Swapped = 2,
+	Reseverd = 3
+};
+
 struct [[gnu::packed]] alignas(size_t) PageEntry
 {
 	ptr_t V : 1 = 1;
@@ -31,7 +39,7 @@ struct [[gnu::packed]] alignas(size_t) PageEntry
 	ptr_t G : 1 = 0;
 	ptr_t A : 1 = 1;
 	ptr_t D : 1 = 1;
-	ptr_t RSW : 2 = 0;
+	PageOSFlag OSflag : 2 = PageOSFlag::Normal;
 	ptr_t ppn : 44;
 	ptr_t Reseverd1 : 10 = 0;
 
@@ -43,7 +51,6 @@ struct [[gnu::packed]] alignas(size_t) PageEntry
 		G = 0;
 		A = D = 1;
 		ppn = pa >> 12;
-		Reseverd1 = 0;
 	}
 	void set_as_dir(ptr_t pa)
 	{
@@ -53,7 +60,6 @@ struct [[gnu::packed]] alignas(size_t) PageEntry
 		G = 0;
 		A = D = 0;
 		ppn = pa >> 12;
-		Reseverd1 = 0;
 	}
 	ptr_t to_pa()
 	{
@@ -72,10 +78,11 @@ class PageDir
 
 public:
 	PageDir();
-	~PageDir();
+	~PageDir() = default;
 	void enable(int cpu_id, int asid);
 	void flushcpu(int cpu_id, int asid);
 	PageEntry *lookup(ptr_t va);
 	void map_va_kva(ptr_t va, ptr_t kva); // require va is not mapped
 	ptr_t alloc_page_for_va(ptr_t va);	  // return kva
+	void free_user_private_mem();
 };

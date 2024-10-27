@@ -65,6 +65,8 @@ void do_scheduler()
 	next_thread->status_running = true;
 	if (from_thread->process != next_thread->process)
 		next_thread->process->pageroot.enable(current_cpu->cpu_id, next_thread->process->pid);
+	else
+		next_thread->process->pageroot.flushcpu(current_cpu->cpu_id, next_thread->process->pid);
 	switch_context_entry(from_thread, next_thread);
 	ready_lock.unlock();
 }
