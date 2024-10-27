@@ -121,7 +121,7 @@ Process *get_process(size_t pid)
 }
 void Syscall::sys_exit(void)
 {
-	current_cpu->current_thread->process->kill();
+	current_process->kill();
 	do_scheduler();
 }
 int Syscall::sys_kill(size_t pid)
@@ -130,13 +130,13 @@ int Syscall::sys_kill(size_t pid)
 	if (p == nullptr)
 		return 0;
 	p->kill();
-	if (p == current_cpu->current_thread->process)
+	if (p == current_process)
 		do_scheduler();
 	return 1;
 }
 int Syscall::sys_getpid()
 {
-	return current_cpu->current_thread->process->pid;
+	return current_process->pid;
 }
 int Syscall::sys_waitpid(size_t pid)
 {
@@ -152,7 +152,7 @@ int Syscall::sys_waitpid(size_t pid)
 }
 void Syscall::sys_task_set(size_t pid, long mask)
 {
-	Process *p = pid == 0 ? current_cpu->current_thread->process : get_process(pid);
+	Process *p = pid == 0 ? current_process : get_process(pid);
 	if (p == nullptr)
 		return;
 	p->cpu_mask = mask;
@@ -163,7 +163,7 @@ int Syscall::sys_exec(const char *name, int argc, char **argv)
 	int task_idx = find_task_idx_by_name(name);
 	if (task_idx == -1)
 		return 0;
-	Process *p = new Process(current_cpu->current_thread->process, name);
+	Process *p = new Process(current_process, name);
 	Thread *t = p->create_thread();
 	load_task_img(task_idx, p->pageroot);
 
@@ -190,7 +190,7 @@ int Syscall::sys_exec(const char *name, int argc, char **argv)
 
 size_t Syscall::sys_create_thread(ptr_t func, ptr_t arg)
 {
-	Thread *t = current_cpu->current_thread->process->create_thread();
+	Thread *t = current_process->create_thread();
 	t->user_context.sepc = USER_ENTRYPOINT;
 	t->user_context.regs[9] = func;
 	t->user_context.regs[10] = arg;
@@ -202,7 +202,7 @@ void print_processes(bool killed)
 {
 	process_global_lock.lock();
 	printk("[Process Table], %ld CPUs, %ld processes\n", cpu_id_cnt.load(), process_table.size());
-	printk("| PID | threads | mask  | name             |\n");
+	printk("| PID | threads | mask | name             |\n");
 	for (Process *p : process_table)
 	{
 		if (p == nullptr || (!killed && p->is_killed))

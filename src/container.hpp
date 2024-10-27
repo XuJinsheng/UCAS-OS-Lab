@@ -18,6 +18,10 @@ public:
 	KernelObject(const KernelObject &) = delete;
 	KernelObject &operator=(const KernelObject &) = delete;
 	virtual ~KernelObject() = default;
+	virtual void on_process_register(Process *)
+	{
+		ref_count++;
+	}
 	virtual void on_process_unregister(Process *)
 	{
 		if (--ref_count == 0)

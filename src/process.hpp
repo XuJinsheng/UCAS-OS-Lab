@@ -43,7 +43,7 @@ public:
 	{
 		if (kernel_objects.insert(obj2key(obj), obj))
 		{
-			obj->ref_count++;
+			obj->on_process_register(this);
 			return true;
 		}
 		return false;

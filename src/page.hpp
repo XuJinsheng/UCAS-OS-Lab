@@ -1,5 +1,6 @@
 #pragma once
 #include <common.h>
+#include <spinlock.hpp>
 
 /* Translation between physical addr and kernel virtual addr */
 static constexpr uintptr_t kva2pa(uintptr_t kva)
@@ -75,6 +76,7 @@ class PageDir
 {
 	PageEntry *root;
 	std::atomic<size_t> flush_mask; // flush_mask[cpu_id] indicates flush
+	SpinLock lock;
 
 public:
 	PageDir();

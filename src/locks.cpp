@@ -73,7 +73,7 @@ void Syscall::mutex_release(size_t mutex_idx)
 {
 	mutex_lock *lock = (mutex_lock *)mutex_lock::pool.get(mutex_idx);
 	if (lock)
-		lock->release(current_cpu->current_thread->process);
+		lock->release(current_process);
 }
 
 class barrier : public IdObject
@@ -138,7 +138,7 @@ public:
 		lock.lock();
 		wait_queue.push(current_cpu->current_thread);
 		lock.unlock();
-		mutex->release(current_cpu->current_thread->process);
+		mutex->release(current_process);
 		current_cpu->current_thread->block();
 		do_scheduler();
 		mutex->acquire();

@@ -69,3 +69,5 @@ public:
 };
 static_assert(offsetof(Thread, kernel_stack_top) == 280, "Thread layout for asm error");
 extern void print_threads(bool killed);
+
+#define current_process current_cpu->current_thread->process

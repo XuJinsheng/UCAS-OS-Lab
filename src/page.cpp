@@ -1,3 +1,4 @@
+#include "thread.hpp"
 #include <arch/CSR.h>
 #include <assert.h>
 #include <common.h>
@@ -130,10 +131,12 @@ void PageDir::map_va_kva(ptr_t va, ptr_t kva)
 	assert(pte->V == false);
 	pte->set_as_leaf(kva2pa(kva));
 	flush_mask = -1;
+	current_process->send_intr_to_running_thread();
 }
 
 ptr_t PageDir::alloc_page_for_va(ptr_t va)
 {
+	lock_guard guard(lock);
 	PageEntry *pte = lookup(va);
 	if (pte->V)
 		return (ptr_t)pte->to_kva();

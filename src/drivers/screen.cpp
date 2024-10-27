@@ -9,8 +9,6 @@
 #define SCREEN_HEIGHT 50
 #define SCREEN_LOC(x, y) ((y) * SCREEN_WIDTH + (x))
 
-#define current_process current_cpu->current_thread->process
-
 /* screen buffer */
 char new_screen[SCREEN_HEIGHT * SCREEN_WIDTH] = {0};
 char old_screen[SCREEN_HEIGHT * SCREEN_WIDTH] = {0};

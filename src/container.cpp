@@ -32,7 +32,7 @@ int64_t IdPool::init(size_t key, std::function<IdObject *()> create_fn)
 		table.push_back(p);
 		p->trie_idx = keymap.insert(key, p);
 	}
-	current_cpu->current_thread->process->register_kernel_object(p);
+	current_process->register_kernel_object(p);
 	return p->handle;
 }
 IdObject *IdPool::get(size_t handle)
@@ -47,7 +47,7 @@ void IdPool::close(size_t handle)
 	IdObject *obj = get(handle); // lock guaranteed
 	if (obj == nullptr)
 		return;
-	current_cpu->current_thread->process->unregister_kernel_object(obj);
+	current_process->unregister_kernel_object(obj);
 }
 void IdPool::remove(IdObject *obj)
 {
