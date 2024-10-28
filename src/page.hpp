@@ -67,16 +67,6 @@ struct [[gnu::packed]] alignas(size_t) PageEntry
 		OSflag = PageOSFlag::Normal;
 		ppn = pa >> 12;
 	}
-	void set_as_swapped(ptr_t sdcard_page)
-	{
-		V = 0;
-		OSflag = PageOSFlag::Swapped;
-		ppn = sdcard_page;
-	}
-	size_t to_sdcard_page()
-	{
-		return ppn;
-	}
 	ptr_t to_pa()
 	{
 		return ppn << 12;

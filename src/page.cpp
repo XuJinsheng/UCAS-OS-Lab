@@ -155,32 +155,10 @@ ptr_t PageDir::alloc_page_for_va(ptr_t va)
 		return 0;
 	}
 	lock_guard guard(lock);
-	// if (free_heap_size < 128 * 1024 * 1024 && active_private_mem > 64 * 1024 * 1024)
-	if (active_private_mem > 64 * 1024 * 1024)
-	{
-		PageEntry *pte;
-		do
-		{
-			ptr_t evict_va = private_mem_fifo.front();
-			private_mem_fifo.pop();
-			pte = lookup(evict_va);
-		} while (!(pte->V && pte->U && pte->XWR != PageAttr::Noleaf && pte->OSflag == PageOSFlag::Normal));
-		size_t sdcard_page = sdcard_alloc(8);
-		bios_sd_write((void *)pte->to_pa(), 8, sdcard_page);
-		kfree((void *)pte->to_kva());
-		pte->set_as_swapped(sdcard_page);
-		active_private_mem -= PAGE_SIZE;
-	}
 	PageEntry *pte = lookup(va);
 	if (pte->V)
 		return (ptr_t)pte->to_kva();
 	ptr_t kva = (ptr_t)kalloc(PAGE_SIZE);
-	if (pte->OSflag == PageOSFlag::Swapped)
-	{
-		size_t sdcard_page = pte->to_sdcard_page();
-		bios_sd_read((void *)kva2pa(kva), 8, sdcard_page);
-		sdcard_free(sdcard_page);
-	}
 	map_va_kva(va, kva, PageOSFlag::Normal);
 	active_private_mem += PAGE_SIZE;
 	private_mem_fifo.push(va);
@@ -197,10 +175,6 @@ static void freeUserRecur(PageEntry pdir[512])
 		else if (pdir[i].V && pdir[i].U && pdir[i].OSflag == PageOSFlag::Normal)
 		{
 			kfree((void *)pdir[i].to_kva());
-		}
-		else if (pdir[i].U && pdir[i].OSflag == PageOSFlag::Swapped)
-		{
-			sdcard_free(pdir[i].to_sdcard_page());
 		}
 		else
 			assert(!pdir[i].V || !pdir[i].U);
