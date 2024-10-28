@@ -55,29 +55,37 @@ constexpr size_t CeilPower2(size_t x)
 	x++;
 	return x;
 }
+constexpr uint8_t log2(size_t x)
+{
+	uint8_t res = 0;
+	while (x >>= 1)
+		res++;
+	return res;
+}
 template <size_t capacity> struct BuddyPool
 {
-	using power_t = size_t;
-	// size_t capacity;
-	power_t longest[capacity * 2 - 1];
+	using power_t = uint8_t;
+	constexpr static power_t caplog = log2(capacity) + 1;
+	power_t longest[capacity * 2 - 1]; // actual=2^(longest[i]-1)
 	void init(size_t size = capacity)
 	{
 		// capacity = size;
 		for (size_t i = 2 * capacity - 2; i > capacity - 2; i--)
 			longest[i] = 1;
 		for (size_t i = 2 * capacity - 2; i > 0; i--)
-			longest[(i - 1) / 2] = longest[i] * 2;
+			longest[(i - 1) / 2] = longest[i] + 1;
 	}
 	size_t alloc(size_t size) // cnt is power of 2
 	{
 		if (size == 0)
 			size = 1;
+		size = log2(size) + 1;
 		assert(longest[0] >= size);
-		size_t nodesize = capacity;
+		power_t nodesize = caplog;
 		size_t index = 0;
 		while (nodesize > size)
 		{
-			nodesize /= 2;
+			nodesize--;
 			size_t lc = index * 2 + 1, rc = index * 2 + 2;
 			if (longest[rc] < size || (size <= longest[lc] && longest[lc] <= longest[rc]))
 				index = lc;
@@ -85,7 +93,7 @@ template <size_t capacity> struct BuddyPool
 				index = rc;
 		}
 		longest[index] = 0;
-		size_t offset = (index + 1) * nodesize - capacity;
+		size_t offset = (index + 1) * (1ul << (nodesize - 1)) - capacity;
 		while (index)
 		{
 			index = (index - 1) / 2;
@@ -97,20 +105,20 @@ template <size_t capacity> struct BuddyPool
 	{
 		assert(offset < capacity);
 		size_t index = offset + capacity - 1;
-		size_t nodesize;
+		power_t nodesize;
 		for (nodesize = 1; longest[index]; index = (index - 1) / 2)
 		{
-			nodesize *= 2;
+			nodesize++;
 			assert(index != 0);
 		}
 		longest[index] = nodesize;
-		size_t free_size = nodesize;
+		size_t free_size = 1ul << nodesize;
 		while (index)
 		{
 			index = (index - 1) / 2;
-			nodesize *= 2;
+			nodesize++;
 			size_t ll = longest[index * 2 + 1], rl = longest[index * 2 + 2];
-			if (ll + rl == nodesize)
+			if (ll + 1 == nodesize && rl + 1 == nodesize)
 				longest[index] = nodesize;
 			else
 				longest[index] = std::max(ll, rl);
@@ -157,7 +165,7 @@ static SMALL_POOL *ksmall;
 static PAGE_POOL *kpage;
 static SD_POOL *sdcard;
 
-static_assert(HEAP_STORAGE_BEGIN + sizeof(SMALL_POOL) + sizeof(PAGE_POOL) + sizeof(SD_POOL) < PAGE_START,
+static_assert(HEAP_STORAGE_BEGIN + sizeof(SMALL_POOL) + sizeof(PAGE_POOL) + sizeof(SD_POOL) < SMALL_BEGIN,
 			  "memory layout error");
 
 void init_kernel_heap()
