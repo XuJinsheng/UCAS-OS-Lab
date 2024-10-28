@@ -68,12 +68,12 @@ void ARRTIBUTE_BOOTKERNEL setup_vm()
 	early_pgdir[get_vpn(pa2kva(base), 2)] =
 		PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .OSflag = PageOSFlag::Normal, .ppn = base >> 12};
 }
-void set_kernel_vm(PageEntry root[512])
+void set_kernel_vm(PageEntry root[512]) // set kernel space for process
 {
 	bzeropage(root, 1);
 	constexpr ptr_t base = 0x40000000;
-	root[get_vpn(pa2kva(base), 2)] =
-		PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .OSflag = PageOSFlag::Normal, .ppn = base >> 12};
+	memcpy(root, (void *)pa2kva(PGDIR_PA), PAGE_SIZE);
+	root[get_vpn(base, 2)].clear(); // donot modify origin mapping for other hart's booting
 }
 
 extern uintptr_t _start[];

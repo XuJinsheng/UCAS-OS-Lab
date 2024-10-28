@@ -43,7 +43,10 @@ struct [[gnu::packed]] alignas(size_t) PageEntry
 	PageOSFlag OSflag : 2;
 	ptr_t ppn : 44;
 	ptr_t Reseverd1 : 10 = 0;
-
+	void clear()
+	{
+		*(size_t *)this = 0;
+	}
 	void set_as_leaf(ptr_t pa)
 	{
 		V = 1;
