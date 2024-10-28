@@ -196,5 +196,7 @@ $(ELF_CREATEIMAGE): $(SRC_CREATEIMAGE)
 
 image: $(ELF_CREATEIMAGE) $(ELF_BOOT) $(ELF_MAIN) $(ELF_USER)
 	cd $(DIR_BUILD) && ./$(<F) --extended $(filter-out $(<F), $(^F))
+append:
+	dd if=/dev/zero of=build/image oflag=append conv=notrunc bs=512MB count=3
 
-.PHONY: image
+.PHONY: image append

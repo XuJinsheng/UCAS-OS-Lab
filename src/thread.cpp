@@ -10,6 +10,13 @@
 SpinLock thread_global_lock;
 std::vector<Thread *> thread_table;
 
+Thread::~Thread()
+{
+	thread_global_lock.lock();
+	thread_table[tid] = nullptr;
+	thread_global_lock.unlock();
+}
+
 Thread::Thread(Process *process, size_t trank)
 	: user_context(), process(process), tid(thread_table.size()), trank(trank)
 {

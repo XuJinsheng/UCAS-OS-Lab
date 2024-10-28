@@ -93,7 +93,7 @@ template <size_t capacity> struct BuddyPool
 		}
 		return offset;
 	}
-	void free(size_t offset)
+	size_t free(size_t offset)
 	{
 		assert(offset < capacity);
 		size_t index = offset + capacity - 1;
@@ -104,6 +104,7 @@ template <size_t capacity> struct BuddyPool
 			assert(index != 0);
 		}
 		longest[index] = nodesize;
+		size_t free_size = nodesize;
 		while (index)
 		{
 			index = (index - 1) / 2;
@@ -114,6 +115,7 @@ template <size_t capacity> struct BuddyPool
 			else
 				longest[index] = std::max(ll, rl);
 		}
+		return free_size;
 	}
 };
 template <size_t batch_size, size_t mem_start, size_t mem_end> class Allocator
@@ -133,16 +135,15 @@ public:
 	}
 	void *alloc(size_t size)
 	{
-		size = CeilPower2(size);
 		size_t ptr = mem_start + pool.alloc(size / batch_size) * batch_size;
 		return (void *)ptr;
 	}
-	void free(void *ptr)
+	size_t free(void *ptr)
 	{
 		size_t offset = (size_t)ptr - mem_start;
 		assert(offset % batch_size == 0);
 		offset /= batch_size;
-		pool.free(offset);
+		return batch_size * pool.free(offset);
 	}
 };
 
@@ -151,26 +152,37 @@ static constexpr ptr_t PAGE_START = 0x51000000, PAGE_BEGIN = 0x50000000, PAGE_EN
 static constexpr ptr_t HEAP_STORAGE_BEGIN = 0x50510000 + 4096;
 using SMALL_POOL = Allocator<128, SMALL_BEGIN, SMALL_END>;
 using PAGE_POOL = Allocator<4096, PAGE_BEGIN, PAGE_END>;
+using SD_POOL = Allocator<8, 1024 * 1024, 2 * 1024 * 1024>;
 static SMALL_POOL *ksmall;
 static PAGE_POOL *kpage;
+static SD_POOL *sdcard;
 
-static_assert(HEAP_STORAGE_BEGIN + sizeof(SMALL_POOL) + sizeof(PAGE_POOL) < PAGE_START, "memory layout error");
+static_assert(HEAP_STORAGE_BEGIN + sizeof(SMALL_POOL) + sizeof(PAGE_POOL) + sizeof(SD_POOL) < PAGE_START,
+			  "memory layout error");
+
 void init_kernel_heap()
 {
 	ksmall = (SMALL_POOL *)pa2kva(HEAP_STORAGE_BEGIN);
 	kpage = (PAGE_POOL *)(ksmall + 1);
+	sdcard = (SD_POOL *)(kpage + 1);
 
 	ksmall->init();
 	kpage->init(PAGE_START - PAGE_BEGIN); // alloced for early page root dir
+	sdcard->init();
 }
 
+size_t free_heap_size = (256 - 16) * 1024 * 1024;
 SpinLock alloc_lock;
 void *kalloc(size_t size)
 {
+	size = CeilPower2(size);
 	lock_guard guard(alloc_lock);
 	void *p;
 	if (size > 1024)
+	{
 		p = kpage->alloc(size);
+		free_heap_size -= std::max(size, 4096ul);
+	}
 	else
 		p = ksmall->alloc(size);
 	return (void *)pa2kva((ptr_t)p);
@@ -182,5 +194,16 @@ void kfree(void *ptr)
 	if ((ptr_t)ptr < PAGE_START)
 		ksmall->free(ptr);
 	else
-		kpage->free(ptr);
+		free_heap_size += kpage->free(ptr);
+}
+
+size_t sdcard_alloc(size_t size)
+{
+	lock_guard guard(alloc_lock);
+	return (ptr_t)sdcard->alloc(size);
+}
+void sdcard_free(size_t ptr)
+{
+	lock_guard guard(alloc_lock);
+	sdcard->free((void *)ptr);
 }

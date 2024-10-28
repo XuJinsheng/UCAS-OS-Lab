@@ -27,7 +27,7 @@ public:
 	const int trank;
 
 	Thread(Process *process, size_t trank);
-	~Thread() = default;
+	~Thread();
 	Thread(const Thread &) = delete;
 	Thread &operator=(const Thread &) = delete;
 

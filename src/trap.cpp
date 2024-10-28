@@ -34,6 +34,7 @@ void handle_other(user_context_reg_t *regs)
 	}
 	printk("sstatus: 0x%lx stval: 0x%lx scause: %lu\n\r", regs->sstatus, regs->stval, regs->scause);
 	printk("sepc: 0x%lx\n\r", regs->sepc);
+	printk("process name: %s\n\r", current_process->name.c_str());
 	assert(0);
 }
 

@@ -1,4 +1,5 @@
 #include <arch/CSR.h>
+#include <arch/bios_func.h>
 #include <assert.h>
 #include <common.h>
 #include <container.hpp>
@@ -7,6 +8,7 @@
 #include <string.h>
 #include <syscall.hpp>
 #include <thread.hpp>
+#include <time.hpp>
 
 typedef uint64_t PTE;
 
@@ -61,14 +63,17 @@ void ARRTIBUTE_BOOTKERNEL setup_vm()
 	PageEntry *early_pgdir = (PageEntry *)PGDIR_PA;
 	bzeropage(early_pgdir, 1);
 	constexpr ptr_t base = 0x40000000;
-	early_pgdir[get_vpn(base, 2)] = PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .ppn = base >> 12};
-	early_pgdir[get_vpn(pa2kva(base), 2)] = PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .ppn = base >> 12};
+	early_pgdir[get_vpn(base, 2)] =
+		PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .OSflag = PageOSFlag::Normal, .ppn = base >> 12};
+	early_pgdir[get_vpn(pa2kva(base), 2)] =
+		PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .OSflag = PageOSFlag::Normal, .ppn = base >> 12};
 }
 void set_kernel_vm(PageEntry root[512])
 {
 	bzeropage(root, 1);
 	constexpr ptr_t base = 0x40000000;
-	root[get_vpn(pa2kva(base), 2)] = PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .ppn = base >> 12};
+	root[get_vpn(pa2kva(base), 2)] =
+		PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .OSflag = PageOSFlag::Normal, .ppn = base >> 12};
 }
 
 extern uintptr_t _start[];
@@ -103,6 +108,11 @@ void PageDir::flushcpu(int cpu_id, int asid)
 	if ((old >> cpu_id) & 1)
 		local_flush_tlb_asid(asid); */
 }
+void PageDir::updated()
+{
+	flush_mask = -1;
+	current_process->send_intr_to_running_thread();
+}
 
 PageEntry *PageDir::lookup(ptr_t va)
 {
@@ -127,43 +137,69 @@ PageEntry *PageDir::lookup(ptr_t va)
 	pte = ((PageEntry *)(pte->to_kva())) + get_vpn(va, 0);
 	return pte;
 }
-void PageDir::map_va_kva(ptr_t va, ptr_t kva)
+void PageDir::map_va_kva(ptr_t va, ptr_t kva, PageOSFlag osflag)
 {
 	PageEntry *pte = lookup(va);
 	assert(pte->V == false);
 	pte->set_as_leaf(kva2pa(kva));
-	flush_mask = -1;
-	current_process->send_intr_to_running_thread();
+	pte->OSflag = osflag;
+	updated();
 }
 
 ptr_t PageDir::alloc_page_for_va(ptr_t va)
 {
 	lock_guard guard(lock);
+	// if (free_heap_size < 128 * 1024 * 1024 && active_private_mem > 64 * 1024 * 1024)
+	if (active_private_mem > 64 * 1024 * 1024)
+	{
+		PageEntry *pte;
+		do
+		{
+			ptr_t evict_va = private_mem_fifo.front();
+			private_mem_fifo.pop();
+			pte = lookup(evict_va);
+		} while (!(pte->V && pte->U && pte->XWR != PageAttr::Noleaf && pte->OSflag == PageOSFlag::Normal));
+		size_t sdcard_page = sdcard_alloc(8);
+		bios_sd_write((void *)pte->to_pa(), 8, sdcard_page);
+		kfree((void *)pte->to_kva());
+		pte->set_as_swapped(sdcard_page);
+		active_private_mem -= PAGE_SIZE;
+	}
 	PageEntry *pte = lookup(va);
 	if (pte->V)
 		return (ptr_t)pte->to_kva();
 	ptr_t kva = (ptr_t)kalloc(PAGE_SIZE);
-	map_va_kva(va, kva);
-	return kva;
+	if (pte->OSflag == PageOSFlag::Swapped)
+	{
+		size_t sdcard_page = pte->to_sdcard_page();
+		bios_sd_read((void *)kva2pa(kva), 8, sdcard_page);
+		sdcard_free(sdcard_page);
+	}
+	map_va_kva(va, kva, PageOSFlag::Normal);
+	active_private_mem += PAGE_SIZE;
+	private_mem_fifo.push(va);
+	return (ptr_t)pte->to_kva();
 }
-static void freeUserRecur(PageEntry pte[512])
+static void freeUserRecur(PageEntry pdir[512])
 {
 	for (int i = 0; i < 512; i++)
 	{
-		if (pte[i].V && pte[i].XWR == PageAttr::Noleaf)
-			freeUserRecur((PageEntry *)pte[i].to_kva());
-		else if (pte[i].V && pte[i].U && pte[i].OSflag == PageOSFlag::Normal)
+		if (pdir[i].V && pdir[i].U && pdir[i].XWR == PageAttr::Noleaf)
 		{
-			kfree((void *)pte[i].to_kva());
+			freeUserRecur((PageEntry *)pdir[i].to_kva());
 		}
-		else if (pte[i].V && pte[i].U && pte[i].OSflag == PageOSFlag::Swapped)
+		else if (pdir[i].V && pdir[i].U && pdir[i].OSflag == PageOSFlag::Normal)
 		{
-			// sdcardfree(pte[i].ppn);
+			kfree((void *)pdir[i].to_kva());
+		}
+		else if (pdir[i].U && pdir[i].OSflag == PageOSFlag::Swapped)
+		{
+			sdcard_free(pdir[i].to_sdcard_page());
 		}
 		else
-			assert(!pte[i].V || !pte[i].U);
-		pte[i].V = 0;
+			assert(!pdir[i].V || !pdir[i].U);
 	}
+	kfree(pdir);
 }
 void PageDir::free_user_private_mem()
 {
@@ -174,8 +210,9 @@ ptr_t PageDir::attach_shared_page(ptr_t kva)
 {
 	lock_guard guard(lock);
 	ptr_t va = shared_page_start;
-	map_va_kva(va, kva);
+	map_va_kva(va, kva, PageOSFlag::Shared);
 	shared_page_start += PAGE_SIZE;
+	updated();
 	return va;
 }
 ptr_t PageDir::free_shared_page(ptr_t va)
@@ -184,8 +221,7 @@ ptr_t PageDir::free_shared_page(ptr_t va)
 	PageEntry *pte = lookup(va);
 	assert(pte->V);
 	pte->V = 0;
-	flush_mask = -1;
-	current_process->send_intr_to_running_thread();
+	updated();
 	return pte->to_kva();
 }
 
