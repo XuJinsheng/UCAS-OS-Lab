@@ -50,6 +50,8 @@
 #define SYSCALL_SHM_DT 57
 #define SYSCALL_BRK 59
 #define SYSCALL_SBRK 60
+#define SYSCALL_NET_SEND 63
+#define SYSCALL_NET_RECV 64
 
 typedef ptr_t (*syscall_func)(ptr_t a0, ptr_t a1, ptr_t a2, ptr_t a3, ptr_t a4, ptr_t a5, ptr_t a6);
 constexpr int SYSCALL_NUM = 96;
@@ -95,6 +97,8 @@ void init_syscall()
 	syscall_table[SYSCALL_SHM_DT] = (syscall_func)Syscall::sys_shmpagedt;
 	syscall_table[SYSCALL_BRK] = (syscall_func)Syscall::sys_brk;
 	syscall_table[SYSCALL_SBRK] = (syscall_func)Syscall::sys_sbrk;
+	// syscall_table[SYSCALL_NET_SEND] = (syscall_func)Syscall::sys_net_send;
+	// syscall_table[SYSCALL_NET_RECV] = (syscall_func)Syscall::sys_net_recv;
 }
 
 ptr_t handle_syscall(const ptr_t args[8])

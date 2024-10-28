@@ -52,4 +52,7 @@ void sys_shmpagedt(void *addr);
 int sys_brk(void *addr);
 void *sys_sbrk(intptr_t increment);
 
+/* net send and recv */
+long sys_net_send(void *txpacket, long length);
+long sys_net_recv(void *rxbuffer, long pkt_num, int *pkt_lens);
 #endif

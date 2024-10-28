@@ -45,4 +45,6 @@
 #define SYSCALL_SHM_DT 57
 #define SYSCALL_BRK 59
 #define SYSCALL_SBRK 60
+#define SYSCALL_NET_SEND 63
+#define SYSCALL_NET_RECV 64
 #endif

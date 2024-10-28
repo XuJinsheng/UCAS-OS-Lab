@@ -59,4 +59,8 @@ ptr_t sys_shmpageget(int key);
 void sys_shmpagedt(ptr_t va);
 int sys_brk(void *addr);
 void *sys_sbrk(intptr_t increment);
+
+// net.cpp
+long sys_net_send(void *txpacket, long length);
+long sys_net_recv(void *rxbuffer, long pkt_num, int *pkt_lens);
 } // namespace Syscall

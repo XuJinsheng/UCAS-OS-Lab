@@ -55,6 +55,8 @@ DEFINE_SYSCALL(sys_wait_thread, SYSCALL_WAIT_THREAD)
 DEFINE_SYSCALL(sys_exit_thread, SYSCALL_EXIT_THREAD)
 DEFINE_SYSCALL(sys_kill_thread, SYSCALL_KILL_THREAD)
 
+DEFINE_SYSCALL(sys_net_send, SYSCALL_NET_SEND)
+DEFINE_SYSCALL(sys_net_recv, SYSCALL_NET_RECV)
 
 /************************************************************/
 /* Do not touch this comment. Reserved for future projects. */

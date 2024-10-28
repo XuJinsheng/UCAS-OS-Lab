@@ -2,7 +2,7 @@
 # Project Information
 # -----------------------------------------------------------------------
 
-PROJECT_IDX	= 4
+PROJECT_IDX	= 5
 
 # -----------------------------------------------------------------------
 # Host Linux Variables
@@ -140,12 +140,23 @@ run:
 run-smp:
 	$(QEMU) $(QEMU_OPTS) $(QEMU_SMP_OPT)
 
+run-net:
+	-@sudo kill `sudo lsof | grep tun | awk '{print $$2}'`
+	sudo $(QEMU) $(QEMU_OPTS) $(QEMU_NET_OPT) $(QEMU_SMP_OPT)
+
 debug:
 	$(QEMU) $(QEMU_OPTS) $(QEMU_DEBUG_OPT)
 
 debug-smp:
 	$(QEMU) $(QEMU_OPTS) $(QEMU_SMP_OPT) $(QEMU_DEBUG_OPT)
 
+debug-net:
+	-@sudo kill `sudo lsof | grep tun | awk '{print $$2}'`
+	sudo $(QEMU) $(QEMU_OPTS) $(QEMU_DEBUG_OPT) $(QEMU_NET_OPT) $(QEMU_SMP_OPT)
+
+viewlog:
+	@if [ ! -e $(QEMU_LOG_FILE) ]; then touch $(QEMU_LOG_FILE); fi;
+	@tail -f $(QEMU_LOG_FILE)
 minicom:
 	sudo $(MINICOM) -D $(TTYUSB1)
 
@@ -153,7 +164,7 @@ bear:
 	bear -- make
 	mv compile_commands.json .vscode/compile_commands.json
 
-.PHONY: all dirs clean floppy asm gdb run debug minicom viewlog bear
+.PHONY: all dirs clean floppy asm gdb run debug minicom viewlog bear run-smp debug-smp run-net debug-net
 
 # -----------------------------------------------------------------------
 # UCAS-OS Rules
