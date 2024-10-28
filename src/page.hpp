@@ -92,6 +92,7 @@ class PageDir
 	ptr_t shared_page_start = 128ul << 30;
 	size_t active_private_mem = 0;
 	std::queue<ptr_t> private_mem_fifo;
+	size_t user_mem_bound = 0x300000;
 
 public:
 	PageDir();
@@ -105,4 +106,6 @@ public:
 	void free_user_private_mem();
 	ptr_t attach_shared_page(ptr_t kva); // return va
 	ptr_t free_shared_page(ptr_t va);	 // return kva
+	void set_user_mem_bound(size_t bound);
+	ptr_t increase_active_private_mem(size_t size);
 };

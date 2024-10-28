@@ -25,6 +25,8 @@ child thread: a0: function pointer, a1: argument
     // set sp for different thread
     la sp, STACK_BASE
 
+    call __crt_init
+
     /* enter main function */
     call main
     j finish

@@ -148,6 +148,12 @@ void PageDir::map_va_kva(ptr_t va, ptr_t kva, PageOSFlag osflag)
 
 ptr_t PageDir::alloc_page_for_va(ptr_t va)
 {
+	if (va >= user_mem_bound)
+	{
+		printk("User memory out of bound\n");
+		assert(0);
+		return 0;
+	}
 	lock_guard guard(lock);
 	// if (free_heap_size < 128 * 1024 * 1024 && active_private_mem > 64 * 1024 * 1024)
 	if (active_private_mem > 64 * 1024 * 1024)
@@ -266,4 +272,24 @@ void Syscall::sys_shmpagedt(ptr_t va)
 			break;
 		}
 	}
+}
+
+int Syscall::sys_brk(void *addr)
+{
+	current_process->pageroot.set_user_mem_bound((ptr_t)addr);
+	return 1;
+}
+void PageDir::set_user_mem_bound(ptr_t addr)
+{
+	user_mem_bound = addr;
+}
+void *Syscall::sys_sbrk(intptr_t increment)
+{
+	return (void *)current_process->pageroot.increase_active_private_mem(increment);
+}
+ptr_t PageDir::increase_active_private_mem(size_t size)
+{
+	ptr_t old = user_mem_bound;
+	user_mem_bound += size;
+	return old;
 }

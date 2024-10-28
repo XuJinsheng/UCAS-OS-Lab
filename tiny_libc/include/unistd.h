@@ -49,5 +49,7 @@ void sys_exit_thread(void);
 void sys_kill_thread(size_t tid);
 void *sys_shmpageget(int key);
 void sys_shmpagedt(void *addr);
+int sys_brk(void *addr);
+void *sys_sbrk(intptr_t increment);
 
 #endif

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-int *const test_begin = (const int *)0x40000000;
 const int test_size = 1024 * 1024 * 512 / 4; // 512MB
 int main(int argc, char *argv[])
 {
@@ -12,6 +11,7 @@ int main(int argc, char *argv[])
 		print_location = atol(argv[1]);
 	}
 
+	int *test_begin = (int *)malloc(test_size * sizeof(int));
 	int *p = test_begin;
 	for (int i = 0; i < test_size; i++)
 	{

@@ -57,4 +57,6 @@ void sys_wait_thread(size_t tid);
 // page.cpp
 ptr_t sys_shmpageget(int key);
 void sys_shmpagedt(ptr_t va);
+int sys_brk(void *addr);
+void *sys_sbrk(intptr_t increment);
 } // namespace Syscall
