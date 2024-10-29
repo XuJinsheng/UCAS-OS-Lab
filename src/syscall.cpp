@@ -97,8 +97,8 @@ void init_syscall()
 	syscall_table[SYSCALL_SHM_DT] = (syscall_func)Syscall::sys_shmpagedt;
 	syscall_table[SYSCALL_BRK] = (syscall_func)Syscall::sys_brk;
 	syscall_table[SYSCALL_SBRK] = (syscall_func)Syscall::sys_sbrk;
-	// syscall_table[SYSCALL_NET_SEND] = (syscall_func)Syscall::sys_net_send;
-	// syscall_table[SYSCALL_NET_RECV] = (syscall_func)Syscall::sys_net_recv;
+	syscall_table[SYSCALL_NET_SEND] = (syscall_func)Syscall::sys_net_send;
+	syscall_table[SYSCALL_NET_RECV] = (syscall_func)Syscall::sys_net_recv;
 }
 
 ptr_t handle_syscall(const ptr_t args[8])

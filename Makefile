@@ -56,6 +56,8 @@ QEMU_OPTS       = -nographic -machine virt -m 256M -kernel $(UBOOT) -bios none \
                      -D $(QEMU_LOG_FILE) -d oslab
 QEMU_DEBUG_OPT  = -s -S
 QEMU_SMP_OPT	= -smp 2
+QEMU_NET_OPT    = -netdev tap,id=mytap,ifname=tap0,script=${DIR_QEMU}/etc/qemu-ifup,downscript=${DIR_QEMU}/etc/qemu-ifdown \
+                    -device e1000,netdev=mytap
 
 # -----------------------------------------------------------------------
 # UCAS-OS Entrypoints and Variables
@@ -207,7 +209,11 @@ $(ELF_CREATEIMAGE): $(SRC_CREATEIMAGE)
 
 image: $(ELF_CREATEIMAGE) $(ELF_BOOT) $(ELF_MAIN) $(ELF_USER)
 	cd $(DIR_BUILD) && ./$(<F) --extended $(filter-out $(<F), $(^F))
+
 append:
 	dd if=/dev/zero of=build/image oflag=append conv=notrunc bs=512MB count=3
 
-.PHONY: image append
+tcpdump:
+	sudo tcpdump -i tap0 -XX -vvv -nn
+
+.PHONY: image append tcpdump

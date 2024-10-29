@@ -20,7 +20,6 @@
 #include <drivers/plic.h>
 #include <kstdio.h>
 
-
 struct plic_handler
 {
 	bool present;
@@ -32,7 +31,7 @@ static void *plic_regs;
 
 static void plic_toggle(struct plic_handler *handler, int hwirq, int enable)
 {
-	uint32_t *reg = handler->enable_base + (hwirq / 32) * sizeof(uint32_t);
+	uint32_t *reg = (uint32_t *)handler->enable_base + (hwirq / 32);
 	uint32_t hwirq_mask = 1 << (hwirq % 32);
 
 	if (enable)

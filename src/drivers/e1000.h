@@ -430,4 +430,6 @@ struct e1000_tx_desc
 #define DEFAULT_80003ES2LAN_TIPG_IPGR2 7
 #define E1000_TIPG_IPGR2_SHIFT 20
 
+extern volatile uint8_t *e1000; // use virtual memory address
+
 #endif // !_E1000_HW_H_

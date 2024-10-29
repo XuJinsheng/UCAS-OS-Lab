@@ -97,6 +97,7 @@ void *ioremap(ptr_t phys_addr, size_t size)
 		phys_addr += PAGE;
 	}
 	io_base_va += size * PAGE;
+	local_flush_tlb_all();
 	return (void *)va;
 }
 
