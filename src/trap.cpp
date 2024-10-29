@@ -55,12 +55,12 @@ void trap_handler(int from_kernel, ptr_t scause, ptr_t stval)
 		if (current_cpu->current_thread->has_exited())
 			do_scheduler();
 		else
-			current_process->pageroot.flushcpu(current_cpu->cpu_id, current_process->pid);
+			current_process->pagedir.flushcpu(current_cpu->cpu_id, current_process->pid);
 		break;
 	case EXC_INST_PAGE_FAULT:
 	case EXC_LOAD_PAGE_FAULT:
 	case EXC_STORE_PAGE_FAULT:
-		current_process->pageroot.alloc_page_for_va(stval);
+		current_process->pagedir.alloc_page_for_va(stval);
 		break;
 	default:
 		handle_other(&regs);

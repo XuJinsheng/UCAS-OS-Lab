@@ -26,53 +26,56 @@ void check_sleeping()
 	}
 	sleep_lock.unlock();
 }
-void do_scheduler()
+void do_scheduler(Thread *next_thread)
 {
-	// check SIE clear
-	check_sleeping();
-	ready_lock.lock();
-	if (current_cpu->current_thread->status() == Thread::Status::RUNNING)
-	{
-		if (current_cpu->current_thread != current_cpu->idle_thread)
-			add_ready_thread_without_lock(current_cpu->current_thread);
-	}
-
-	Thread *next_thread = nullptr;
 	Thread *from_thread = current_cpu->current_thread;
 	from_thread->status_running = false; // must be clear before select ready thread
 
-	for (auto it = ready_queue.begin(); it != ready_queue.end(); ++it)
-	{
-		if ((*it)->status() != Thread::Status::READY)
-		{
-			it = ready_queue.erase(it);
-			continue;
-		}
-		if (!((*it)->process->cpu_mask & (1 << current_cpu->cpu_id)))
-			continue;
-		next_thread = *it;
-		ready_queue.erase(it);
-		break;
-	}
 	if (next_thread == nullptr)
 	{
-		next_thread = current_cpu->idle_thread;
+		// check SIE clear
+		check_sleeping();
+		ready_lock.lock();
+		if (current_cpu->current_thread->status() == Thread::Status::READY)
+		{
+			if (current_cpu->current_thread != current_cpu->idle_thread)
+				add_ready_thread_without_lock(current_cpu->current_thread);
+		}
+
+		for (auto it = ready_queue.begin(); it != ready_queue.end(); ++it)
+		{
+			if ((*it)->status() != Thread::Status::READY)
+			{
+				it = ready_queue.erase(it);
+				continue;
+			}
+			if (!((*it)->process->cpu_mask & (1 << current_cpu->cpu_id)))
+				continue;
+			next_thread = *it;
+			ready_queue.erase(it);
+			break;
+		}
+		if (next_thread == nullptr)
+		{
+			next_thread = current_cpu->idle_thread;
+		}
+		ready_lock.unlock();
 	}
 
+	// note: from_thread may equal to next_thread
 	current_cpu->current_thread = next_thread;
 	from_thread->running_cpu = nullptr;
 	next_thread->running_cpu = current_cpu;
+	from_thread->status_running = false;
 	next_thread->status_running = true;
 	if (from_thread->process != next_thread->process)
-		next_thread->process->pageroot.enable(current_cpu->cpu_id, next_thread->process->pid);
+		next_thread->process->pagedir.enable(current_cpu->cpu_id, next_thread->process->pid);
 	else
-		next_thread->process->pageroot.flushcpu(current_cpu->cpu_id, next_thread->process->pid);
+		next_thread->process->pagedir.flushcpu(current_cpu->cpu_id, next_thread->process->pid);
 	switch_context_entry(from_thread, next_thread);
-	ready_lock.unlock();
 }
 void kernel_thread_first_run()
 {
-	ready_lock.unlock();
 	user_trap_return();
 }
 

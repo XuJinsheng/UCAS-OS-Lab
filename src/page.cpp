@@ -63,9 +63,7 @@ void ARRTIBUTE_BOOTKERNEL setup_vm()
 	PageEntry *early_pgdir = (PageEntry *)PGDIR_PA;
 	bzeropage(early_pgdir, 1);
 	constexpr ptr_t base = 0x40000000;
-	early_pgdir[get_vpn(base, 2)] =
-		PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .OSflag = PageOSFlag::Normal, .ppn = base >> 12};
-	early_pgdir[get_vpn(pa2kva(base), 2)] =
+	early_pgdir[get_vpn(base, 2)] = early_pgdir[get_vpn(pa2kva(base), 2)] =
 		PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .OSflag = PageOSFlag::Normal, .ppn = base >> 12};
 }
 void set_kernel_vm(PageEntry root[512]) // set kernel space for process
@@ -108,7 +106,7 @@ void PageDir::flushcpu(int cpu_id, int asid)
 	if ((old >> cpu_id) & 1)
 		local_flush_tlb_asid(asid); */
 }
-void PageDir::updated()
+void PageDir::on_page_updated()
 {
 	flush_mask = -1;
 	current_process->send_intr_to_running_thread();
@@ -143,7 +141,7 @@ void PageDir::map_va_kva(ptr_t va, ptr_t kva, PageOSFlag osflag)
 	assert(pte->V == false);
 	pte->set_as_leaf(kva2pa(kva));
 	pte->OSflag = osflag;
-	updated();
+	on_page_updated();
 }
 
 ptr_t PageDir::alloc_page_for_va(ptr_t va)
@@ -192,7 +190,7 @@ ptr_t PageDir::attach_shared_page(ptr_t kva)
 	ptr_t va = shared_page_start;
 	map_va_kva(va, kva, PageOSFlag::Shared);
 	shared_page_start += PAGE_SIZE;
-	updated();
+	on_page_updated();
 	return va;
 }
 ptr_t PageDir::free_shared_page(ptr_t va)
@@ -201,7 +199,7 @@ ptr_t PageDir::free_shared_page(ptr_t va)
 	PageEntry *pte = lookup(va);
 	assert(pte->V);
 	pte->V = 0;
-	updated();
+	on_page_updated();
 	return pte->to_kva();
 }
 
@@ -228,11 +226,11 @@ ptr_t Syscall::sys_shmpageget(int key)
 		it = shared_pages.end() - 1;
 	}
 	(*it)->cnt++;
-	return current_process->pageroot.attach_shared_page((*it)->kva);
+	return current_process->pagedir.attach_shared_page((*it)->kva);
 }
 void Syscall::sys_shmpagedt(ptr_t va)
 {
-	ptr_t kva = current_process->pageroot.free_shared_page(va);
+	ptr_t kva = current_process->pagedir.free_shared_page(va);
 	for (auto it = shared_pages.begin(); it != shared_pages.end(); it++)
 	{
 		if ((*it)->kva == kva)
@@ -250,7 +248,7 @@ void Syscall::sys_shmpagedt(ptr_t va)
 
 int Syscall::sys_brk(void *addr)
 {
-	current_process->pageroot.set_user_mem_bound((ptr_t)addr);
+	current_process->pagedir.set_user_mem_bound((ptr_t)addr);
 	return 1;
 }
 void PageDir::set_user_mem_bound(ptr_t addr)
@@ -259,7 +257,7 @@ void PageDir::set_user_mem_bound(ptr_t addr)
 }
 void *Syscall::sys_sbrk(intptr_t increment)
 {
-	return (void *)current_process->pageroot.increase_active_private_mem(increment);
+	return (void *)current_process->pagedir.increase_active_private_mem(increment);
 }
 ptr_t PageDir::increase_active_private_mem(size_t size)
 {

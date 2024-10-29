@@ -87,13 +87,14 @@ class PageDir
 	std::queue<ptr_t> private_mem_fifo;
 	size_t user_mem_bound = 0x300000;
 
+	void on_page_updated();
+	PageEntry *lookup(ptr_t va);
+
 public:
 	PageDir();
 	~PageDir() = default;
 	void enable(int cpu_id, int asid);
 	void flushcpu(int cpu_id, int asid);
-	void updated();
-	PageEntry *lookup(ptr_t va);
 	void map_va_kva(ptr_t va, ptr_t kva, PageOSFlag osflag = PageOSFlag::Normal); // require va is not mapped
 	ptr_t alloc_page_for_va(ptr_t va);											  // return kva
 	void free_user_private_mem();

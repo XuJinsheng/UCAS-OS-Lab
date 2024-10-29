@@ -18,7 +18,7 @@ public:
 public:
 	const int pid;
 	const std::string name;
-	PageDir pageroot;
+	PageDir pagedir;
 
 	Process *parent;
 	std::vector<Process *> children;
