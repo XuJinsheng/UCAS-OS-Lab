@@ -103,3 +103,5 @@ public:
 	void set_user_mem_bound(size_t bound);
 	ptr_t increase_active_private_mem(size_t size);
 };
+
+extern void *ioremap(ptr_t phys_addr, size_t size);

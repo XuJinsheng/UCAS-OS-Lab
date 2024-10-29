@@ -49,6 +49,7 @@ static inline void set_satp(unsigned long mode, unsigned long asid, unsigned lon
  * 0xffff_ffc0_0000_0000-0xffff_ffff_ffff_ffff is for kernel mode
  */
 constexpr ptr_t PGDIR_PA = 0x50510000;
+constexpr ptr_t IO_BASE_VA = 0xffffffe000000000lu;
 #define ARRTIBUTE_BOOTKERNEL __attribute__((section(".bootkernel")))
 void ARRTIBUTE_BOOTKERNEL enable_vm()
 {
@@ -65,6 +66,13 @@ void ARRTIBUTE_BOOTKERNEL setup_vm()
 	constexpr ptr_t base = 0x40000000;
 	early_pgdir[get_vpn(base, 2)] = early_pgdir[get_vpn(pa2kva(base), 2)] =
 		PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .OSflag = PageOSFlag::Normal, .ppn = base >> 12};
+	early_pgdir[get_vpn(IO_BASE_VA, 2)] = PageEntry{.XWR = PageAttr::Noleaf,
+													.U = 0,
+													.G = 1,
+													.A = 0,
+													.D = 0,
+													.OSflag = PageOSFlag::Normal,
+													.ppn = (PGDIR_PA + PAGE_SIZE) >> 12};
 }
 void set_kernel_vm(PageEntry root[512]) // set kernel space for process
 {
@@ -72,6 +80,24 @@ void set_kernel_vm(PageEntry root[512]) // set kernel space for process
 	constexpr ptr_t base = 0x40000000;
 	memcpy(root, (void *)pa2kva(PGDIR_PA), PAGE_SIZE);
 	root[get_vpn(base, 2)].clear(); // donot modify origin mapping for other hart's booting
+}
+ptr_t io_base_va = IO_BASE_VA;
+void *ioremap(ptr_t phys_addr, size_t size)
+{
+	constexpr size_t PAGE = 1ul << 21; // 2MB
+	ptr_t va = io_base_va + phys_addr % PAGE;
+	size += phys_addr % PAGE;
+	size = size / PAGE + (size % PAGE != 0);
+	phys_addr = phys_addr / PAGE * PAGE;
+	PageEntry *pte = (PageEntry *)pa2kva(PGDIR_PA + PAGE_SIZE);
+	for (size_t i = 0; i < size; i++)
+	{
+		pte[get_vpn(io_base_va, 1) + i] =
+			PageEntry{.XWR = PageAttr::RWX, .U = 0, .G = 1, .OSflag = PageOSFlag::Normal, .ppn = phys_addr >> 12};
+		phys_addr += PAGE;
+	}
+	io_base_va += size * PAGE;
+	return (void *)va;
 }
 
 extern uintptr_t _start[];

@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <common.h>
 #include <kstdio.h>
+#include <net.hpp>
 #include <schedule.hpp>
 #include <spinlock.hpp>
 #include <syscall.hpp>
@@ -56,6 +57,9 @@ void trap_handler(int from_kernel, ptr_t scause, ptr_t stval)
 			do_scheduler();
 		else
 			current_process->pagedir.flushcpu(current_cpu->cpu_id, current_process->pid);
+		break;
+	case SCAUSE_IRQ_FLAG | IRQ_S_EXT:
+		handle_ext_irq();
 		break;
 	case EXC_INST_PAGE_FAULT:
 	case EXC_LOAD_PAGE_FAULT:

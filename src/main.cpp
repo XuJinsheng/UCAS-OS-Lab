@@ -4,6 +4,7 @@
 #include <kalloc.hpp>
 #include <kstdio.h>
 #include <locks.hpp>
+#include <net.hpp>
 #include <schedule.hpp>
 #include <syscall.hpp>
 #include <task_loader.hpp>
@@ -56,6 +57,9 @@ int main(int hartid)
 		// Init system call table (0_0)
 		init_syscall();
 		printk("> [INIT] System call initialized successfully.\n");
+
+		// Init PLIC and network (QAQ)
+		init_net();
 
 		// Create the first user process
 		Syscall::sys_exec("shell", 0, nullptr);

@@ -154,7 +154,7 @@ public:
 
 static constexpr ptr_t SMALL_BEGIN = 0x50800000, SMALL_END = 0x51000000;
 static constexpr ptr_t PAGE_START = 0x51000000, PAGE_BEGIN = 0x50000000, PAGE_END = 0x60000000;
-static constexpr ptr_t HEAP_STORAGE_BEGIN = 0x50510000 + 4096;
+static constexpr ptr_t HEAP_STORAGE_BEGIN = 0x50510000 + PAGE_SIZE * 2;
 using SMALL_POOL = Allocator<128, SMALL_BEGIN, SMALL_END>;
 using PAGE_POOL = Allocator<4096, PAGE_BEGIN, PAGE_END>;
 static SMALL_POOL *ksmall;
