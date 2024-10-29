@@ -1,6 +1,6 @@
-#include <CPU.hpp>
 #include <arch/bios_func.h>
 #include <common.h>
+#include <container.hpp>
 #include <drivers/e1000.h>
 #include <drivers/e1000.hpp>
 #include <drivers/plic.h>
@@ -10,7 +10,6 @@
 #include <schedule.hpp>
 #include <spinlock.hpp>
 #include <syscall.hpp>
-#include <thread.hpp>
 
 static SpinLock net_buffer_lock; // network buffer lock
 static SpinLock e1000_lock;		 // e1000 lock
@@ -66,10 +65,7 @@ long Syscall::sys_net_send(void *txpacket, long length)
 	{
 		// Enable TXQE interrupt if transmit queue is full
 		e1000_write_reg(e1000, E1000_IMS, E1000_IMS_TXQE);
-		send_wait_queue.push(current_cpu->current_thread);
-		current_cpu->current_thread->block();
-		net_buffer_lock.unlock();
-		do_scheduler();
+		do_block(send_wait_queue, net_buffer_lock);
 		net_buffer_lock.lock();
 	}
 	net_buffer_lock.unlock();
@@ -84,10 +80,7 @@ long Syscall::sys_net_recv(void *rxbuffer, long pkt_num, int *pkt_lens)
 		net_buffer_lock.lock();
 		while ((pkt_lens[i] = e1000_poll(rx + offset)) == -1)
 		{
-			recv_wait_queue.push(current_cpu->current_thread);
-			current_cpu->current_thread->block();
-			net_buffer_lock.unlock();
-			do_scheduler();
+			do_block(recv_wait_queue, net_buffer_lock);
 			net_buffer_lock.lock();
 		}
 		net_buffer_lock.unlock();

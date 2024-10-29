@@ -89,6 +89,19 @@ void add_ready_thread_without_lock(Thread *thread)
 {
 	ready_queue.push_back(thread);
 }
+void do_block(WaitQueue &wait_queue)
+{
+	wait_queue.push(current_cpu->current_thread);
+	current_cpu->current_thread->block();
+	do_scheduler();
+}
+void do_block(WaitQueue &wait_queue, SpinLock &lock)
+{
+	wait_queue.push(current_cpu->current_thread);
+	current_cpu->current_thread->block();
+	lock.unlock();
+	do_scheduler();
+}
 
 void Syscall::yield(void)
 {

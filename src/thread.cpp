@@ -90,9 +90,7 @@ void Syscall::sys_wait_thread(size_t tid)
 	Thread *t = get_thread(tid);
 	if (t == nullptr)
 		return;
-	t->wait_exited_queue.push(current_cpu->current_thread);
-	current_cpu->current_thread->block();
-	do_scheduler();
+	do_block(t->wait_exited_queue);
 }
 
 void print_threads(bool killed)

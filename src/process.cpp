@@ -143,11 +143,7 @@ int Syscall::sys_waitpid(size_t pid)
 	Process *p = get_process(pid);
 	if (p == nullptr)
 		return 0;
-	p->process_own_lock.lock();
-	p->wait_kill_queue.push(current_cpu->current_thread);
-	p->process_own_lock.unlock();
-	current_cpu->current_thread->block();
-	do_scheduler();
+	do_block(p->wait_kill_queue);
 	return pid;
 }
 void Syscall::sys_task_set(size_t pid, long mask)
