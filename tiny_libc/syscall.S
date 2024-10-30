@@ -58,6 +58,22 @@ DEFINE_SYSCALL(sys_kill_thread, SYSCALL_KILL_THREAD)
 DEFINE_SYSCALL(sys_net_send, SYSCALL_NET_SEND)
 DEFINE_SYSCALL(sys_net_recv, SYSCALL_NET_RECV)
 
+DEFINE_SYSCALL(sys_mkfs, SYSCALL_FS_MKFS)
+DEFINE_SYSCALL(sys_statfs, SYSCALL_FS_STATFS)
+DEFINE_SYSCALL(sys_cd, SYSCALL_FS_CD)
+DEFINE_SYSCALL(sys_mkdir, SYSCALL_FS_MKDIR)
+DEFINE_SYSCALL(sys_rmdir, SYSCALL_FS_RMDIR)
+DEFINE_SYSCALL(sys_ls, SYSCALL_FS_LS)
+DEFINE_SYSCALL(sys_touch, SYSCALL_FS_TOUCH)
+DEFINE_SYSCALL(sys_cat, SYSCALL_FS_CAT)
+DEFINE_SYSCALL(sys_fopen, SYSCALL_FS_FOPEN)
+DEFINE_SYSCALL(sys_fread, SYSCALL_FS_FREAD)
+DEFINE_SYSCALL(sys_fwrite, SYSCALL_FS_FWRITE)
+DEFINE_SYSCALL(sys_fclose, SYSCALL_FS_FCLOSE)
+DEFINE_SYSCALL(sys_ln, SYSCALL_FS_LN)
+DEFINE_SYSCALL(sys_rm, SYSCALL_FS_RM)
+DEFINE_SYSCALL(sys_lseek, SYSCALL_FS_LSEEK)
+
 /************************************************************/
 /* Do not touch this comment. Reserved for future projects. */
 /************************************************************/

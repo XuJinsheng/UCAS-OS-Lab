@@ -52,6 +52,21 @@
 #define SYSCALL_SBRK 60
 #define SYSCALL_NET_SEND 63
 #define SYSCALL_NET_RECV 64
+#define SYSCALL_FS_MKFS 65
+#define SYSCALL_FS_STATFS 66
+#define SYSCALL_FS_CD 67
+#define SYSCALL_FS_MKDIR 68
+#define SYSCALL_FS_RMDIR 69
+#define SYSCALL_FS_LS 70
+#define SYSCALL_FS_TOUCH 71
+#define SYSCALL_FS_CAT 72
+#define SYSCALL_FS_FOPEN 73
+#define SYSCALL_FS_FREAD 74
+#define SYSCALL_FS_FWRITE 75
+#define SYSCALL_FS_FCLOSE 76
+#define SYSCALL_FS_LN 77
+#define SYSCALL_FS_RM 78
+#define SYSCALL_FS_LSEEK 79
 
 typedef ptr_t (*syscall_func)(ptr_t a0, ptr_t a1, ptr_t a2, ptr_t a3, ptr_t a4, ptr_t a5, ptr_t a6);
 constexpr int SYSCALL_NUM = 96;
@@ -99,6 +114,23 @@ void init_syscall()
 	syscall_table[SYSCALL_SBRK] = (syscall_func)Syscall::sys_sbrk;
 	syscall_table[SYSCALL_NET_SEND] = (syscall_func)Syscall::sys_net_send;
 	syscall_table[SYSCALL_NET_RECV] = (syscall_func)Syscall::sys_net_recv;
+	/*
+	syscall_table[SYSCALL_FS_MKFS] = (syscall_func)Syscall::sys_mkfs;
+	syscall_table[SYSCALL_FS_STATFS] = (syscall_func)Syscall::sys_statfs;
+	syscall_table[SYSCALL_FS_CD] = (syscall_func)Syscall::sys_cd;
+	syscall_table[SYSCALL_FS_MKDIR] = (syscall_func)Syscall::sys_mkdir;
+	syscall_table[SYSCALL_FS_RMDIR] = (syscall_func)Syscall::sys_rmdir;
+	syscall_table[SYSCALL_FS_LS] = (syscall_func)Syscall::sys_ls;
+	syscall_table[SYSCALL_FS_TOUCH] = (syscall_func)Syscall::sys_touch;
+	syscall_table[SYSCALL_FS_CAT] = (syscall_func)Syscall::sys_cat;
+	syscall_table[SYSCALL_FS_FOPEN] = (syscall_func)Syscall::sys_fopen;
+	syscall_table[SYSCALL_FS_FREAD] = (syscall_func)Syscall::sys_fread;
+	syscall_table[SYSCALL_FS_FWRITE] = (syscall_func)Syscall::sys_fwrite;
+	syscall_table[SYSCALL_FS_FCLOSE] = (syscall_func)Syscall::sys_fclose;
+	syscall_table[SYSCALL_FS_LN] = (syscall_func)Syscall::sys_ln;
+	syscall_table[SYSCALL_FS_RM] = (syscall_func)Syscall::sys_rm;
+	syscall_table[SYSCALL_FS_LSEEK] = (syscall_func)Syscall::sys_lseek;
+	*/
 }
 
 ptr_t handle_syscall(const ptr_t args[8])
