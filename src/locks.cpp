@@ -28,12 +28,7 @@ public:
 		if (owner == current_cpu->current_thread)
 			return;
 		if (owner != nullptr)
-		{
-			wait_queue.push(current_cpu->current_thread);
-			current_cpu->current_thread->block();
-			lock.unlock();
-			do_scheduler();
-		}
+			do_block(wait_queue, lock);
 		else
 			lock.unlock();
 		owner = current_cpu->current_thread;
@@ -92,12 +87,7 @@ public:
 		lock.lock();
 		count++;
 		if (count < goal)
-		{
-			wait_queue.push(current_cpu->current_thread);
-			current_cpu->current_thread->block();
-			lock.unlock();
-			do_scheduler();
-		}
+			do_block(wait_queue, lock);
 		else
 		{
 			count = 0;
@@ -212,10 +202,7 @@ public:
 		{
 			if (msg_queue.size() >= MAX_MSG_SIZE)
 			{
-				send_wait_queue.push(current_cpu->current_thread);
-				current_cpu->current_thread->block();
-				lock.unlock();
-				do_scheduler();
+				do_block(recv_wait_queue, lock);
 				lock.lock();
 			}
 			msg_queue.push(*p++);
@@ -232,10 +219,7 @@ public:
 		{
 			if (msg_queue.empty())
 			{
-				recv_wait_queue.push(current_cpu->current_thread);
-				current_cpu->current_thread->block();
-				lock.unlock();
-				do_scheduler();
+				do_block(recv_wait_queue, lock);
 				lock.lock();
 			}
 			*p++ = msg_queue.front();
