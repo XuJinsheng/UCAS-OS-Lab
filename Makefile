@@ -216,4 +216,7 @@ append:
 tcpdump:
 	sudo tcpdump -i tap0 -XX -vvv -nn
 
-.PHONY: image append tcpdump
+pktRxTx:
+	sudo ./pktRxTx -m 1
+
+.PHONY: image append tcpdump pktRxTx
