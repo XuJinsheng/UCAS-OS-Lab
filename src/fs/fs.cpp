@@ -300,8 +300,10 @@ int get_inode_by_filename(const char *path, bool create_if_not_existed, uint new
 		return -1;
 	assert(free_offset != 0); // no space for new file
 	if (new_inode_idx == 0)
+	{
 		new_inode_idx = inode_alloc();
-	write_inode(new_inode_idx, Inode{});
+		write_inode(new_inode_idx, Inode{});
+	}
 	DirEntry dir = {new_inode_idx, 1};
 	strcpy(dir.name, path);
 	inode_modify_data(true, cwd, &dir, free_offset * sizeof(DirEntry), sizeof(DirEntry));
@@ -536,16 +538,12 @@ int fs_ln(const char *src_path, const char *dst_path)
 		return -1;
 	}
 	Inode inode = read_inode(src_inode);
-	if (inode.type != 0)
-	{
-		printk("Destination already existed\n");
-		return -1;
-	}
 	inode.link_cnt++;
 	write_inode(src_inode, inode);
 	return 0;
 }
 
+static char cat_buffer[BLOCK_SIZE] __attribute__((aligned(4096)));
 int fs_cat(const char *path)
 {
 	int inode = get_inode_by_filename(path, false);
@@ -564,8 +562,8 @@ int fs_cat(const char *path)
 	while (offset < inode_info.size)
 	{
 		int read_size = std::min(BLOCK_SIZE, (size_t)inode_info.size - offset);
-		inode_modify_data(false, inode_info, buffer, offset, read_size);
-		putstr((char *)buffer);
+		inode_modify_data(false, inode_info, cat_buffer, offset, read_size);
+		putstr((char *)cat_buffer);
 		offset += read_size;
 	}
 	printk("\n");

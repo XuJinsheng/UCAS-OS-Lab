@@ -125,13 +125,11 @@ void init_syscall()
 	syscall_table[SYSCALL_FS_RM] = (syscall_func)fs_rm;
 	syscall_table[SYSCALL_FS_LN] = (syscall_func)fs_ln;
 	syscall_table[SYSCALL_FS_CAT] = (syscall_func)fs_cat;
-	/*
 	syscall_table[SYSCALL_FS_FOPEN] = (syscall_func)fs_fopen;
 	syscall_table[SYSCALL_FS_FREAD] = (syscall_func)fs_fread;
 	syscall_table[SYSCALL_FS_FWRITE] = (syscall_func)fs_fwrite;
 	syscall_table[SYSCALL_FS_FCLOSE] = (syscall_func)fs_fclose;
 	syscall_table[SYSCALL_FS_LSEEK] = (syscall_func)fs_lseek;
-	*/
 }
 
 ptr_t handle_syscall(const ptr_t args[8])

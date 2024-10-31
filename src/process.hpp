@@ -50,7 +50,7 @@ public:
 	}
 	bool unregister_kernel_object(KernelObject *obj) // true: remove success, false: not found
 	{
-		if (kernel_objects.remove(obj2key(obj)))
+		if (!kernel_objects.remove(obj2key(obj)))
 			return false;
 		obj->on_process_unregister(this);
 		return true;
