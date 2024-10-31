@@ -4,7 +4,7 @@
 #include <kstdio.h>
 #include <string.h>
 
-uint8_t buffer[BLOCK_SIZE]; // caller saved
+uint8_t buffer[BLOCK_SIZE] __attribute__((aligned(4096))); // caller saved
 SuperBlock superblock;
 uint cwd_inode;
 
@@ -43,13 +43,14 @@ int fs_mkfs()
 	superblock.inode_start_block = superblock.block_map_start_block + MAX_BLOCK_NUM / (8 * BLOCK_SIZE);
 	superblock.block_start_block = superblock.inode_start_block + MAX_INODE_NUM / INODE_PER_BLOCK;
 	superblock.block_allocated = superblock.block_start_block;
-	superblock.block_free_min = superblock.block_start_block;
+	assert(superblock.block_start_block < BLOCK_SIZE * 8);
+	superblock.block_free_min = BLOCK_SIZE * 8;
 	superblock.magic1 = SUPERBLOCK_MAGIC;
 
 	memset(buffer, 0, BLOCK_SIZE);
-	for (uint32_t i = 0; i < superblock.inode_map_size / 8; i++)
+	for (uint32_t i = 0; i < superblock.inode_map_size / (8 * BLOCK_SIZE); i++)
 		write_block(buffer, superblock.inode_map_start_block + i);
-	for (uint32_t i = 0; i < superblock.block_map_size / 8; i++)
+	for (uint32_t i = 0; i < superblock.block_map_size / (8 * BLOCK_SIZE); i++)
 		write_block(buffer, superblock.block_map_start_block + i);
 
 	superblock.root_inode = inode_alloc();
@@ -59,7 +60,7 @@ int fs_mkfs()
 	Inode root_inode = {.type = 1, .link_cnt = 65535};
 	DirEntry dir[2] = {DirEntry{cwd_inode, 1, "."}, DirEntry{cwd_inode, 1, ".."}};
 	inode_modify_data(true, root_inode, dir, 0, sizeof(dir));
-	write_inode(superblock.root_inode, Inode{});
+	write_inode(superblock.root_inode, root_inode);
 	return 0;
 }
 int fs_statfs()
@@ -321,7 +322,7 @@ int fs_cd(const char *path)
 		memcpy(tmp, path, p - path);
 		tmp[p - path] = 0;
 		cwd_inode = get_inode_by_filename(tmp, false);
-		if (cwd_inode < 0)
+		if ((int)cwd_inode < 0)
 		{
 			cwd_inode = old_cwd;
 			printk("No such directory\n");
@@ -345,7 +346,6 @@ int fs_ls(const char *path, int option)
 	uint old_cwd = cwd_inode;
 	if (fs_cd(path) == -1)
 	{
-		printk("No such directory\n");
 		cwd_inode = old_cwd;
 		return -1;
 	}

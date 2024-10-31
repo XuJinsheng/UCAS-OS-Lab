@@ -12,7 +12,7 @@ constexpr size_t BLOCK_START = 512 * MiB; // 512MB
 constexpr size_t BLOCK_END = 1024 * MiB;  // 1GB
 constexpr uint32_t SUPERBLOCK_MAGIC = 0x20221205;
 constexpr size_t MAX_BLOCK_NUM = (BLOCK_END - BLOCK_START) / BLOCK_SIZE;
-constexpr size_t MAX_INODE_NUM = MAX_BLOCK_NUM / 8;
+constexpr size_t MAX_INODE_NUM = 32 * KiB;
 
 struct SuperBlock // start is counted in block
 {

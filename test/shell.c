@@ -52,6 +52,34 @@ int spilt()
 	}
 	return i;
 }
+char cwd[256] = "/";
+int cwd_idx = 1;
+void truncate_cwd()
+{
+	cwd_idx = strlen(cwd);
+	cwd[cwd_idx] = '/';
+	cwd[cwd_idx + 1] = 0;
+	int i = 1;
+	for (int j = 1; cwd[j]; j++)
+	{
+		if (cwd[j] == '/')
+		{
+			int dash = (cwd[i - 1] == '.') + (cwd[i - 2] == '.');
+			while (dash)
+			{
+				while (i < 0)
+					;
+				i--;
+				dash -= cwd[i] == '/';
+			}
+		}
+		cwd[i++] = cwd[j];
+	}
+	if (i > 1)
+		i--;
+	cwd[i] = 0;
+	cwd_idx = i;
+}
 int main(void)
 {
 	sys_move_cursor(0, SHELL_BEGIN);
@@ -59,7 +87,7 @@ int main(void)
 
 	while (1)
 	{
-		printf("> root@UCAS_OS: ");
+		printf("> root@UCAS_OS:%s$ ", cwd);
 		// call syscall to read UART port
 		int buffer_index = 0;
 		for (char ch = sys_getchar(); ch != '\n' && ch != '\r'; ch = sys_getchar())
@@ -182,14 +210,78 @@ int main(void)
 			sys_move_cursor(0, SHELL_BEGIN);
 			printf("------------------- COMMAND -------------------\n");
 		}
+		else if (strcmp(argv[0], "mkfs") == 0)
+		{
+			sys_mkfs();
+		}
+		else if (strcmp(argv[0], "statfs") == 0)
+		{
+			sys_statfs();
+		}
+		else if (strcmp(argv[0], "cd") == 0)
+		{
+			if (argc < 2)
+				printf("cd: lack of arguments\n");
+			else if (sys_cd(argv[1]) == 0)
+			{
+				cwd[cwd_idx++] = '/';
+				strcpy(cwd + cwd_idx, argv[1]);
+				truncate_cwd();
+			}
+		}
+		else if (strcmp(argv[0], "ls") == 0)
+		{
+			if (argc < 2)
+				sys_ls(".", 0);
+			else
+				sys_ls(argv[1], 0);
+		}
+		else if (strcmp(argv[0], "cat") == 0)
+		{
+			if (argc < 2)
+				printf("cat: lack of arguments\n");
+			else
+				sys_cat(argv[1]);
+		}
+		else if (strcmp(argv[0], "mkdir") == 0)
+		{
+			if (argc < 2)
+				printf("mkdir: lack of arguments\n");
+			else
+				sys_mkdir(argv[1]);
+		}
+		else if (strcmp(argv[0], "rmdir") == 0)
+		{
+			if (argc < 2)
+				printf("rmdir: lack of arguments\n");
+			else
+				sys_rmdir(argv[1]);
+		}
+		else if (strcmp(argv[0], "touch") == 0)
+		{
+			if (argc < 2)
+				printf("touch: lack of arguments\n");
+			else
+				sys_touch(argv[1]);
+		}
+		else if (strcmp(argv[0], "rm") == 0)
+		{
+			if (argc < 2)
+				printf("rm: lack of arguments\n");
+			else
+				sys_rm(argv[1]);
+		}
+		else if (strcmp(argv[0], "echo") == 0)
+		{
+			if (argc < 2)
+				printf("echo: lack of arguments\n");
+			else
+				printf("%s\n", argv[1]);
+		}
 		else
 		{
 			printf("Unknown command: [%s]\n", argv[0]);
 		}
-		/************************************************************/
-		/* Do not touch this comment. Reserved for future projects. */
-		/************************************************************/
 	}
-
 	return 0;
 }
