@@ -84,7 +84,7 @@ extern Inode read_inode(uint ino);
 extern void write_inode(uint ino, const Inode &inode);
 // do not exceed one page, will alloc new block if needed
 extern bool inode_modify_data(bool is_write, Inode &inode, void *data, uint offset, uint length);
-extern int get_inode_by_filename(const char *path, bool create_if_not_existed);
+extern int get_inode_by_filename(const char *path, bool create_if_not_existed, uint new_inode_idx = 0);
 
 extern int fs_mkfs(void);
 extern int fs_statfs(void);

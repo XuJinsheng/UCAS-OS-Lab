@@ -121,11 +121,11 @@ void init_syscall()
 	syscall_table[SYSCALL_FS_LS] = (syscall_func)fs_ls;
 	syscall_table[SYSCALL_FS_MKDIR] = (syscall_func)fs_mkdir;
 	syscall_table[SYSCALL_FS_TOUCH] = (syscall_func)fs_touch;
-	/*
 	syscall_table[SYSCALL_FS_RMDIR] = (syscall_func)fs_rmdir;
 	syscall_table[SYSCALL_FS_RM] = (syscall_func)fs_rm;
 	syscall_table[SYSCALL_FS_LN] = (syscall_func)fs_ln;
 	syscall_table[SYSCALL_FS_CAT] = (syscall_func)fs_cat;
+	/*
 	syscall_table[SYSCALL_FS_FOPEN] = (syscall_func)fs_fopen;
 	syscall_table[SYSCALL_FS_FREAD] = (syscall_func)fs_fread;
 	syscall_table[SYSCALL_FS_FWRITE] = (syscall_func)fs_fwrite;

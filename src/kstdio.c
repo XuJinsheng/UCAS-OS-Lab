@@ -73,6 +73,13 @@ size_t getline(char *buf, size_t size)
 	return i;
 }
 
+int putstr(const char *s)
+{
+	screen_write(s);
+	screen_reflush();
+	return 0;
+}
+
 static unsigned int mini_strlen(const char *s)
 {
 	unsigned int len = 0;

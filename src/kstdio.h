@@ -8,6 +8,8 @@ int getchar();
 
 size_t getline(char *buf, size_t size);
 
+int putstr(const char *);
+
 /* kernel print */
 int printk(const char *fmt, ...);
 

@@ -52,8 +52,8 @@ int spilt()
 	}
 	return i;
 }
-char cwd[256] = "/";
-int cwd_idx = 1;
+char cwd[256] = "";
+int cwd_idx = 0;
 void truncate_cwd()
 {
 	cwd_idx = strlen(cwd);
@@ -67,16 +67,14 @@ void truncate_cwd()
 			int dash = (cwd[i - 1] == '.') + (cwd[i - 2] == '.');
 			while (dash)
 			{
-				while (i < 0)
-					;
 				i--;
+				if (i < 0)
+					break;
 				dash -= cwd[i] == '/';
 			}
 		}
 		cwd[i++] = cwd[j];
 	}
-	if (i > 1)
-		i--;
 	cwd[i] = 0;
 	cwd_idx = i;
 }
@@ -87,7 +85,7 @@ int main(void)
 
 	while (1)
 	{
-		printf("> root@UCAS_OS:%s$ ", cwd);
+		printf("> root@UCAS_OS:%s$ ", cwd_idx == 0 ? "/" : cwd);
 		// call syscall to read UART port
 		int buffer_index = 0;
 		for (char ch = sys_getchar(); ch != '\n' && ch != '\r'; ch = sys_getchar())
@@ -270,6 +268,14 @@ int main(void)
 				printf("rm: lack of arguments\n");
 			else
 				sys_rm(argv[1]);
+		}
+		// ln
+		else if (strcmp(argv[0], "ln") == 0)
+		{
+			if (argc < 3)
+				printf("ln: lack of arguments\n");
+			else
+				sys_ln(argv[1], argv[2]);
 		}
 		else if (strcmp(argv[0], "echo") == 0)
 		{

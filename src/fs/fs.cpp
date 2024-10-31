@@ -65,7 +65,7 @@ int fs_mkfs()
 }
 int fs_statfs()
 {
-	printk("[statfs]:");
+	printk("[statfs]:\n");
 	printk("magic0: %x\n", superblock.magic0);
 	printk("fs_start: %x\n", superblock.fs_start);
 	printk("inode_map: start_block: %x, size: %x, allocated: %x, free_min: %x\n", superblock.inode_map_start_block,
@@ -242,7 +242,7 @@ bool inode_modify_data(bool is_write, Inode &inode, void *data, uint offset, uin
 	assert(offset % BLOCK_SIZE + length <= BLOCK_SIZE); // no cross block
 	// L3 is actually not used
 	bool inode_modified = false;
-	if (offset + length > inode.size)
+	if ((offset + length > inode.size) && inode.type == 2)
 	{
 		inode.size = offset + length;
 		inode_modified = true;
@@ -270,7 +270,7 @@ bool inode_modify_data(bool is_write, Inode &inode, void *data, uint offset, uin
 	return inode_modified;
 }
 
-int get_inode_by_filename(const char *path, bool create_if_not_existed)
+int get_inode_by_filename(const char *path, bool create_if_not_existed, uint new_inode_idx)
 {
 	Inode cwd = read_inode(cwd_inode);
 	uint free_offset = 0;
@@ -299,15 +299,37 @@ int get_inode_by_filename(const char *path, bool create_if_not_existed)
 	if (!create_if_not_existed)
 		return -1;
 	assert(free_offset != 0); // no space for new file
-	uint new_inode = inode_alloc();
-	write_inode(new_inode, Inode{});
-	DirEntry dir = {new_inode, 1};
+	if (new_inode_idx == 0)
+		new_inode_idx = inode_alloc();
+	write_inode(new_inode_idx, Inode{});
+	DirEntry dir = {new_inode_idx, 1};
 	strcpy(dir.name, path);
-	if (inode_modify_data(true, cwd, &dir, free_offset * sizeof(DirEntry), sizeof(DirEntry)))
-	{
-		write_inode(cwd_inode, cwd);
-	}
-	return new_inode;
+	inode_modify_data(true, cwd, &dir, free_offset * sizeof(DirEntry), sizeof(DirEntry));
+	cwd.size++;
+	write_inode(cwd_inode, cwd);
+	return new_inode_idx;
+}
+void remove_inode_by_filename(const char *path)
+{
+	Inode cwd = read_inode(cwd_inode);
+	for (int i = 0; i < INODE_DATA_DIRECT; i++)
+		if (cwd.data_direct[i])
+		{
+			DirEntry *dir = (DirEntry *)buffer;
+			read_block(buffer, cwd.data_direct[i]);
+			for (int j = 0; j < DIRENTRY_PER_BLOCK; j++)
+			{
+				if (dir[j].valid && strcmp(dir[j].name, path) == 0)
+				{
+					dir[j].valid = 0;
+					write_block(buffer, cwd.data_direct[i]);
+					cwd.size--;
+					write_inode(cwd_inode, cwd);
+					return;
+				}
+			}
+		}
+	assert(0); // no such file
 }
 
 int fs_cd(const char *path)
@@ -442,9 +464,34 @@ void free_inode_blocks(uint ino, Inode &inode)
 			free_inode_blocks_recur(inode.data_l2[i], 2);
 	if (inode.data_l3)
 		free_inode_blocks_recur(inode.data_l3, 3);
-	inode_free(ino);
 }
-/* int fs_rmdir(const char *path){
+int fs_rm(const char *path)
+{
+	int inode = get_inode_by_filename(path, false);
+	if (inode < 0)
+	{
+		printk("No such file\n");
+		return -1;
+	}
+	Inode inode_info = read_inode(inode);
+	if (inode_info.type != 2)
+	{
+		printk("Not a file\n");
+		return -1;
+	}
+	remove_inode_by_filename(path);
+	inode_info.link_cnt--;
+	if (inode_info.link_cnt != 0)
+	{
+		write_inode(inode, inode_info);
+		return 0;
+	}
+	free_inode_blocks(inode, inode_info);
+	inode_free(inode);
+	return 0;
+}
+int fs_rmdir(const char *path)
+{
 	int inode_idx = get_inode_by_filename(path, false);
 	if (inode_idx < 0)
 	{
@@ -457,5 +504,70 @@ void free_inode_blocks(uint ino, Inode &inode)
 		printk("Not a directory\n");
 		return -1;
 	}
+	if (inode.size != 0)
+	{
+		printk("Directory not empty\n");
+		return -1;
+	}
+	remove_inode_by_filename(path);
+	inode.link_cnt--;
+	if (inode.link_cnt != 0)
+	{
+		write_inode(inode_idx, inode);
+		return 0;
+	}
+	free_inode_blocks(inode_idx, inode);
+	inode_free(inode_idx);
+	return 0;
+}
 
-} */
+int fs_ln(const char *src_path, const char *dst_path)
+{
+	int src_inode = get_inode_by_filename(src_path, false);
+	if (src_inode < 0)
+	{
+		printk("No such source file\n");
+		return -1;
+	}
+	int dst_inode = get_inode_by_filename(dst_path, true, src_inode);
+	if (dst_inode < 0)
+	{
+		printk("Failed to create link\n");
+		return -1;
+	}
+	Inode inode = read_inode(src_inode);
+	if (inode.type != 0)
+	{
+		printk("Destination already existed\n");
+		return -1;
+	}
+	inode.link_cnt++;
+	write_inode(src_inode, inode);
+	return 0;
+}
+
+int fs_cat(const char *path)
+{
+	int inode = get_inode_by_filename(path, false);
+	if (inode < 0)
+	{
+		printk("No such file\n");
+		return -1;
+	}
+	Inode inode_info = read_inode(inode);
+	if (inode_info.type != 2)
+	{
+		printk("Not a file\n");
+		return -1;
+	}
+	int offset = 0;
+	while (offset < inode_info.size)
+	{
+		int read_size = std::min(BLOCK_SIZE, (size_t)inode_info.size - offset);
+		inode_modify_data(false, inode_info, buffer, offset, read_size);
+		putstr((char *)buffer);
+		offset += read_size;
+	}
+	printk("\n");
+	return 0;
+}
