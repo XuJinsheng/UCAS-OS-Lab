@@ -26,7 +26,7 @@ Thread::Thread(Process *process, size_t trank)
 
 	user_context.regs[16] = trank; // a7
 
-	kernel_stack_top = (ptr_t)kalloc(2 * PAGE_SIZE) + PAGE_SIZE * 2;
+	kernel_stack_top = (ptr_t)kalloc(4 * PAGE_SIZE) + PAGE_SIZE * 4;
 	ptr_t *ksp = (ptr_t *)kernel_stack_top;
 	ksp -= 14;
 	ksp[0] = (ptr_t)kernel_thread_first_run;

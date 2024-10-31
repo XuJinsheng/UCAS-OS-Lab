@@ -1,6 +1,7 @@
 #include <arch/bios_func.h>
 #include <common.h>
 #include <drivers/screen.h>
+#include <fs/fs.hpp>
 #include <kalloc.hpp>
 #include <kstdio.h>
 #include <locks.hpp>
@@ -60,6 +61,13 @@ int main(int hartid)
 
 		// Init PLIC and network (QAQ)
 		init_net();
+		printk("> [INIT] Network initialization succeeded.\n");
+
+		// Init file system (QAQ)
+		if (init_filesystem())
+			printk("> [INIT] File system found.\n");
+		else
+			printk("> [INIT] File system not found, creating a new one.\n");
 
 		// Create the first user process
 		Syscall::sys_exec("shell", 0, nullptr);

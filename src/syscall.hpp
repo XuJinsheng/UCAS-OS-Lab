@@ -64,20 +64,4 @@ void *sys_sbrk(intptr_t increment);
 long sys_net_send(void *txpacket, long length);
 long sys_net_recv(void *rxbuffer, long pkt_num, int *pkt_lens);
 
-// filesystem.cpp
-int sys_mkfs(void);
-int sys_statfs(void);
-int sys_cd(const char *path);
-int sys_mkdir(const char *path);
-int sys_rmdir(const char *path);
-int sys_ls(const char *path, int option);
-int sys_touch(const char *path);
-int sys_cat(const char *path);
-int sys_fopen(const char *path, int mode);
-int sys_fread(int fd, char *buff, int length);
-int sys_fwrite(int fd, const char *buff, int length);
-int sys_fclose(int fd);
-int sys_ln(const char *src_path, const char *dst_path);
-int sys_rm(const char *path);
-int sys_lseek(int fd, int offset, int whence);
 } // namespace Syscall
