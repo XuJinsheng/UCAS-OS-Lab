@@ -3,6 +3,8 @@
 #include <arch/bios_func.h>
 #include <common.h>
 
+namespace FS
+{
 typedef uint32_t uint;
 constexpr size_t KiB = 1024;
 constexpr size_t MiB = 1024 * KiB;
@@ -105,3 +107,4 @@ extern int fs_lseek(int fd, int offset, int whence);
 extern uint8_t buffer[BLOCK_SIZE]; // caller saved
 extern SuperBlock superblock;
 extern uint cwd_inode;
+} // namespace FS

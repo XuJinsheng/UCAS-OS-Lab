@@ -115,21 +115,21 @@ void init_syscall()
 	syscall_table[SYSCALL_SBRK] = (syscall_func)Syscall::sys_sbrk;
 	syscall_table[SYSCALL_NET_SEND] = (syscall_func)Syscall::sys_net_send;
 	syscall_table[SYSCALL_NET_RECV] = (syscall_func)Syscall::sys_net_recv;
-	syscall_table[SYSCALL_FS_MKFS] = (syscall_func)fs_mkfs;
-	syscall_table[SYSCALL_FS_STATFS] = (syscall_func)fs_statfs;
-	syscall_table[SYSCALL_FS_CD] = (syscall_func)fs_cd;
-	syscall_table[SYSCALL_FS_LS] = (syscall_func)fs_ls;
-	syscall_table[SYSCALL_FS_MKDIR] = (syscall_func)fs_mkdir;
-	syscall_table[SYSCALL_FS_TOUCH] = (syscall_func)fs_touch;
-	syscall_table[SYSCALL_FS_RMDIR] = (syscall_func)fs_rmdir;
-	syscall_table[SYSCALL_FS_RM] = (syscall_func)fs_rm;
-	syscall_table[SYSCALL_FS_LN] = (syscall_func)fs_ln;
-	syscall_table[SYSCALL_FS_CAT] = (syscall_func)fs_cat;
-	syscall_table[SYSCALL_FS_FOPEN] = (syscall_func)fs_fopen;
-	syscall_table[SYSCALL_FS_FREAD] = (syscall_func)fs_fread;
-	syscall_table[SYSCALL_FS_FWRITE] = (syscall_func)fs_fwrite;
-	syscall_table[SYSCALL_FS_FCLOSE] = (syscall_func)fs_fclose;
-	syscall_table[SYSCALL_FS_LSEEK] = (syscall_func)fs_lseek;
+	syscall_table[SYSCALL_FS_MKFS] = (syscall_func)FS::fs_mkfs;
+	syscall_table[SYSCALL_FS_STATFS] = (syscall_func)FS::fs_statfs;
+	syscall_table[SYSCALL_FS_CD] = (syscall_func)FS::fs_cd;
+	syscall_table[SYSCALL_FS_LS] = (syscall_func)FS::fs_ls;
+	syscall_table[SYSCALL_FS_MKDIR] = (syscall_func)FS::fs_mkdir;
+	syscall_table[SYSCALL_FS_TOUCH] = (syscall_func)FS::fs_touch;
+	syscall_table[SYSCALL_FS_RMDIR] = (syscall_func)FS::fs_rmdir;
+	syscall_table[SYSCALL_FS_RM] = (syscall_func)FS::fs_rm;
+	syscall_table[SYSCALL_FS_LN] = (syscall_func)FS::fs_ln;
+	syscall_table[SYSCALL_FS_CAT] = (syscall_func)FS::fs_cat;
+	syscall_table[SYSCALL_FS_FOPEN] = (syscall_func)FS::fs_fopen;
+	syscall_table[SYSCALL_FS_FREAD] = (syscall_func)FS::fs_fread;
+	syscall_table[SYSCALL_FS_FWRITE] = (syscall_func)FS::fs_fwrite;
+	syscall_table[SYSCALL_FS_FCLOSE] = (syscall_func)FS::fs_fclose;
+	syscall_table[SYSCALL_FS_LSEEK] = (syscall_func)FS::fs_lseek;
 }
 
 ptr_t handle_syscall(const ptr_t args[8])

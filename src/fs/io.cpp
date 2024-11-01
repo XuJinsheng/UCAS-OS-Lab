@@ -6,6 +6,8 @@
 #include <page.hpp>
 #include <string.h>
 
+namespace FS
+{
 void read_block(void *dest, uint32_t blockid, uint32_t blocks) // do not use user space pointer
 {
 	assert(blockid < BLOCK_END / SECTOR_SIZE); // 1GB
@@ -24,3 +26,4 @@ void write_block(void *src, uint32_t blockid, uint32_t blocks) // do not use use
 	assert((long)src < 0); // high space
 	bios_sd_write((void *)kva2pa((ptr_t)src), blocks, blockid);
 }
+} // namespace FS

@@ -64,7 +64,7 @@ int main(int hartid)
 		printk("> [INIT] Network initialization succeeded.\n");
 
 		// Init file system (QAQ)
-		if (init_filesystem())
+		if (FS::init_filesystem())
 			printk("> [INIT] File system found.\n");
 		else
 			printk("> [INIT] File system not found, creating a new one.\n");

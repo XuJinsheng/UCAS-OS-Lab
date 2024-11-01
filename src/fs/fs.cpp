@@ -4,6 +4,9 @@
 #include <kstdio.h>
 #include <string.h>
 
+namespace FS
+{
+
 uint8_t buffer[BLOCK_SIZE] __attribute__((aligned(4096))); // caller saved
 SuperBlock superblock;
 uint cwd_inode;
@@ -569,3 +572,5 @@ int fs_cat(const char *path)
 	printk("\n");
 	return 0;
 }
+
+} // namespace FS

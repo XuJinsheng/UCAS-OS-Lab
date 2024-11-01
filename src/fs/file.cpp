@@ -5,6 +5,8 @@
 #include <kstdio.h>
 #include <string.h>
 #include <thread.hpp>
+namespace FS
+{
 
 static char file_buffer[BLOCK_SIZE] __attribute__((aligned(4096)));
 class File : public IdObject
@@ -129,3 +131,5 @@ int fs_fclose(int fd)
 	File::pool.close(fd);
 	return 0;
 }
+
+} // namespace FS

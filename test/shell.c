@@ -59,22 +59,32 @@ void truncate_cwd()
 	cwd_idx = strlen(cwd);
 	cwd[cwd_idx] = '/';
 	cwd[cwd_idx + 1] = 0;
-	int i = 1;
-	for (int j = 1; cwd[j]; j++)
+	int i = 0;
+	for (int j = 0; cwd[j]; j++)
 	{
-		if (cwd[j] == '/')
+		if (j > 0 && cwd[j] == '/')
 		{
-			int dash = (cwd[i - 1] == '.') + (cwd[i - 2] == '.');
+			int dash = 0;
+			if (cwd[j - 1] == '.')
+			{
+				dash++;
+				if (cwd[j - 2] == '.')
+					dash++;
+			}
 			while (dash)
 			{
 				i--;
 				if (i < 0)
+				{
+					i = 0;
 					break;
+				}
 				dash -= cwd[i] == '/';
 			}
 		}
 		cwd[i++] = cwd[j];
 	}
+	i--;
 	cwd[i] = 0;
 	cwd_idx = i;
 }
