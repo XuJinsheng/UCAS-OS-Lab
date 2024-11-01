@@ -1,15 +1,21 @@
+#include <CPU.hpp>
 #include <assert.h>
 #include <common.h>
 #include <fs/fs.hpp>
 #include <kstdio.h>
+#include <process.hpp>
 #include <string.h>
+#include <thread.hpp>
 
 namespace FS
 {
 
 uint8_t buffer[BLOCK_SIZE] __attribute__((aligned(4096))); // caller saved
 SuperBlock superblock;
-uint cwd_inode;
+uint &cwd_node()
+{
+	return current_process->cwd_node_idx;
+}
 
 bool init_filesystem()
 {
@@ -17,13 +23,13 @@ bool init_filesystem()
 	if (sb->magic0 == SUPERBLOCK_MAGIC && sb->magic1 == SUPERBLOCK_MAGIC)
 	{
 		superblock = *sb;
-		cwd_inode = superblock.root_inode;
+		cwd_node() = superblock.root_inode;
 		return true;
 	}
 	else
 	{
 		fs_mkfs();
-		cwd_inode = superblock.root_inode;
+		cwd_node() = superblock.root_inode;
 		return false;
 	}
 }
@@ -57,11 +63,11 @@ int fs_mkfs()
 		write_block(buffer, superblock.block_map_start_block + i);
 
 	superblock.root_inode = inode_alloc();
-	cwd_inode = superblock.root_inode;
+	cwd_node() = superblock.root_inode;
 	flush_filesystem();
 
 	Inode root_inode = {.type = 1, .link_cnt = 65535};
-	DirEntry dir[2] = {DirEntry{cwd_inode, 1, "."}, DirEntry{cwd_inode, 1, ".."}};
+	DirEntry dir[2] = {DirEntry{cwd_node(), 1, "."}, DirEntry{cwd_node(), 1, ".."}};
 	inode_modify_data(true, root_inode, dir, 0, sizeof(dir));
 	write_inode(superblock.root_inode, root_inode);
 	return 0;
@@ -275,7 +281,7 @@ bool inode_modify_data(bool is_write, Inode &inode, void *data, uint offset, uin
 
 int get_inode_by_filename(const char *path, bool create_if_not_existed, uint new_inode_idx)
 {
-	Inode cwd = read_inode(cwd_inode);
+	Inode cwd = read_inode(cwd_node());
 	uint free_offset = 0;
 	for (int i = 0; i < INODE_DATA_DIRECT; i++)
 		if (cwd.data_direct[i])
@@ -311,12 +317,12 @@ int get_inode_by_filename(const char *path, bool create_if_not_existed, uint new
 	strcpy(dir.name, path);
 	inode_modify_data(true, cwd, &dir, free_offset * sizeof(DirEntry), sizeof(DirEntry));
 	cwd.size++;
-	write_inode(cwd_inode, cwd);
+	write_inode(cwd_node(), cwd);
 	return new_inode_idx;
 }
 void remove_inode_by_filename(const char *path)
 {
-	Inode cwd = read_inode(cwd_inode);
+	Inode cwd = read_inode(cwd_node());
 	for (int i = 0; i < INODE_DATA_DIRECT; i++)
 		if (cwd.data_direct[i])
 		{
@@ -329,7 +335,7 @@ void remove_inode_by_filename(const char *path)
 					dir[j].valid = 0;
 					write_block(buffer, cwd.data_direct[i]);
 					cwd.size--;
-					write_inode(cwd_inode, cwd);
+					write_inode(cwd_node(), cwd);
 					return;
 				}
 			}
@@ -340,7 +346,7 @@ void remove_inode_by_filename(const char *path)
 int fs_cd(const char *path)
 {
 	char tmp[64];
-	uint old_cwd = cwd_inode;
+	uint old_cwd = cwd_node();
 	const char *p = path;
 	while (*p)
 	{
@@ -348,17 +354,17 @@ int fs_cd(const char *path)
 			p++;
 		memcpy(tmp, path, p - path);
 		tmp[p - path] = 0;
-		cwd_inode = get_inode_by_filename(tmp, false);
-		if ((int)cwd_inode < 0)
+		cwd_node() = get_inode_by_filename(tmp, false);
+		if ((int)cwd_node() < 0)
 		{
-			cwd_inode = old_cwd;
+			cwd_node() = old_cwd;
 			printk("No such directory\n");
 			return -1;
 		}
-		Inode inode = read_inode(cwd_inode);
+		Inode inode = read_inode(cwd_node());
 		if (inode.type != 1)
 		{
-			cwd_inode = old_cwd;
+			cwd_node() = old_cwd;
 			printk("Not a directory\n");
 			return -1;
 		}
@@ -368,36 +374,52 @@ int fs_cd(const char *path)
 	}
 	return 0;
 }
+static char ls_buffer[BLOCK_SIZE] __attribute__((aligned(4096)));
 int fs_ls(const char *path, int option)
 {
-	uint old_cwd = cwd_inode;
+	uint old_cwd = cwd_node();
 	if (fs_cd(path) == -1)
 	{
-		cwd_inode = old_cwd;
+		cwd_node() = old_cwd;
 		return -1;
 	}
-	Inode inode = read_inode(cwd_inode);
+
+	Inode inode = read_inode(cwd_node());
 	if (inode.type != 1)
 	{
 		printk("Not a directory\n");
-		cwd_inode = old_cwd;
+		cwd_node() = old_cwd;
 		return -1;
+	}
+
+	bool opt_l = option & LS_L;
+	if (opt_l)
+	{
+		printk("| mode | links |   size   |      name    |\n");
 	}
 	for (int i = 0; i < INODE_DATA_DIRECT; i++)
 		if (inode.data_direct[i])
 		{
-			DirEntry *dir = (DirEntry *)buffer;
-			read_block(buffer, inode.data_direct[i]);
+			DirEntry *dir = (DirEntry *)ls_buffer;
+			read_block(ls_buffer, inode.data_direct[i]);
 			for (int j = 0; j < DIRENTRY_PER_BLOCK; j++)
 			{
 				if (dir[j].valid)
 				{
-					printk("%s ", dir[j].name);
+					if (opt_l)
+					{
+						Inode n = read_inode(dir[j].inode);
+						printk("| %4d | %5d | %8d | %12s |\n", n.type, n.link_cnt, n.size, dir[j].name);
+					}
+					else
+					{
+						printk("%s ", dir[j].name);
+					}
 				}
 			}
 		}
 	printk("\n");
-	cwd_inode = old_cwd;
+	cwd_node() = old_cwd;
 	return 0;
 }
 
@@ -417,7 +439,7 @@ int fs_mkdir(const char *path)
 	}
 	inode.type = 1;
 	inode.link_cnt = 1;
-	DirEntry dir[2] = {DirEntry{(uint)inode_idx, 1, "."}, DirEntry{cwd_inode, 1, ".."}};
+	DirEntry dir[2] = {DirEntry{(uint)inode_idx, 1, "."}, DirEntry{cwd_node(), 1, ".."}};
 	inode_modify_data(true, inode, dir, 0, sizeof(dir));
 	write_inode(inode_idx, inode);
 	return 0;

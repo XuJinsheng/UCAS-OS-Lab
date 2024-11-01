@@ -39,6 +39,7 @@ Process::Process(Process *parent, std::string name) : pid(process_table.size()),
 		parent->process_own_lock.lock();
 		parent->children.push_back(this);
 		cpu_mask = parent->cpu_mask;
+		cwd_node_idx = parent->cwd_node_idx;
 		parent->process_own_lock.unlock();
 	}
 	process_global_lock.lock();

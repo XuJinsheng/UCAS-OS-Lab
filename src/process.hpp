@@ -29,6 +29,7 @@ public:
 	int cursor_x = 0, cursor_y = 0;
 	WaitQueue wait_kill_queue;
 	std::atomic<size_t> active_thread_cnt; // inc and dec by thread
+	uint32_t cwd_node_idx = 0;
 	bool is_killed = false;
 
 private:

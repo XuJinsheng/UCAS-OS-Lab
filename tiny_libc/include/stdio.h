@@ -13,6 +13,9 @@
 #define SEEK_CUR 1
 #define SEEK_END 2
 
+/* options of sys_ls */
+#define LS_L 0x1
+
 int printf(const char *fmt, ...);
 int vprintf(const char *fmt, va_list va);
 

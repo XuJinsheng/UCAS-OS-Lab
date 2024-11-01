@@ -71,6 +71,9 @@ constexpr size_t DIRENTRY_PER_BLOCK = BLOCK_SIZE / sizeof(DirEntry);
 #define SEEK_CUR 1
 #define SEEK_END 2
 
+/* options of do_ls */
+#define LS_L 0x1
+
 extern bool init_filesystem();
 extern void flush_filesystem();
 
@@ -106,5 +109,5 @@ extern int fs_lseek(int fd, int offset, int whence);
 
 extern uint8_t buffer[BLOCK_SIZE]; // caller saved
 extern SuperBlock superblock;
-extern uint cwd_inode;
+extern uint &cwd_inode();
 } // namespace FS

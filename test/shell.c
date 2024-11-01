@@ -239,10 +239,23 @@ int main(void)
 		}
 		else if (strcmp(argv[0], "ls") == 0)
 		{
-			if (argc < 2)
-				sys_ls(".", 0);
-			else
-				sys_ls(argv[1], 0);
+			const char *path = ".";
+			int option = 0;
+			for (int i = 1; i < argc; i++)
+				if (argv[i][0] != '-')
+					path = argv[i];
+				else
+				{
+					switch (argv[i][1])
+					{
+					case 'l':
+						option |= LS_L;
+						break;
+					default:
+						printf("ls: unknown argument %s", argv[i]);
+					}
+				}
+			sys_ls(path, option);
 		}
 		else if (strcmp(argv[0], "cat") == 0)
 		{
