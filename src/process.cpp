@@ -191,7 +191,7 @@ size_t Syscall::sys_create_thread(ptr_t func, ptr_t arg)
 	t->user_context.sepc = USER_ENTRYPOINT;
 	t->user_context.regs[9] = func;
 	t->user_context.regs[10] = arg;
-	// add_ready_thread(t);
+	add_ready_thread(t);
 	return t->tid;
 }
 
