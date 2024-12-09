@@ -49,6 +49,7 @@ void trap_handler(int from_kernel, ptr_t scause, ptr_t stval)
 		regs.sepc += 4;
 		break;
 	case SCAUSE_IRQ_FLAG | IRQ_S_TIMER:
+		net_idle_check();
 		handle_irq_timer();
 		break;
 	case SCAUSE_IRQ_FLAG | IRQ_S_SOFT:

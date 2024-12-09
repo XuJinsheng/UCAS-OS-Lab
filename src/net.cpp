@@ -43,6 +43,12 @@ void handle_e1000_irq()
 		net_buffer_lock.unlock();
 	}
 }
+void net_idle_check()
+{
+	net_buffer_lock.lock();
+	recv_wait_queue.wakeup_all();
+	net_buffer_lock.unlock();
+}
 void handle_ext_irq()
 {
 	uint32_t id = plic_claim();

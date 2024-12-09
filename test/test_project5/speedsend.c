@@ -30,7 +30,7 @@ int main(void)
 	sys_move_cursor(0, print_location);
 	printf("> [SPEED SEND] start send 1M package.               \n");
 
-	int index = 0;
+	uint32_t index = 0;
 	uint64_t checksum = 0;
 	int start_tick = sys_get_tick();
 	for (int pkg_num = 0; pkg_num < PGK_NUM; pkg_num++)
@@ -45,9 +45,11 @@ int main(void)
 
 		for (int i = 0; i < sizeof(pkg.data) / 4; i++)
 		{
-			pkg.data[i] = index;
+			pkg.data[i] = index * index;
 			checksum += pkg.data[i];
 			index++;
+			if (index > 10000)
+				index = 0;
 		}
 		sys_net_send(&pkg, 1280);
 		/* printf("Send %d package.\n", index / sizeof(pkg.data));
