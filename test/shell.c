@@ -221,6 +221,7 @@ int main(void)
 		else if (strcmp(argv[0], "mkfs") == 0)
 		{
 			sys_mkfs();
+			cwd_idx = 0;
 		}
 		else if (strcmp(argv[0], "statfs") == 0)
 		{

@@ -75,7 +75,7 @@ constexpr size_t DIRENTRY_PER_BLOCK = BLOCK_SIZE / sizeof(DirEntry);
 #define LS_L 0x1
 
 extern bool init_filesystem();
-extern void flush_filesystem();
+extern void flush_superblock();
 
 extern void read_block(void *dest, uint32_t blockid, uint32_t blocks = 1); // do not use user space pointer
 extern void write_block(void *src, uint32_t blockid, uint32_t blocks = 1); // do not use user space pointer

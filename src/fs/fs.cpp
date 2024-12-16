@@ -20,6 +20,7 @@ uint &cwd_node()
 bool init_filesystem()
 {
 	SuperBlock *sb = (SuperBlock *)buffer;
+	read_block(buffer, 0);
 	if (sb->magic0 == SUPERBLOCK_MAGIC && sb->magic1 == SUPERBLOCK_MAGIC)
 	{
 		superblock = *sb;
@@ -33,7 +34,7 @@ bool init_filesystem()
 		return false;
 	}
 }
-void flush_filesystem()
+void flush_superblock()
 {
 	SuperBlock *sb = (SuperBlock *)buffer;
 	*sb = superblock;
@@ -64,7 +65,7 @@ int fs_mkfs()
 
 	superblock.root_inode = inode_alloc();
 	cwd_node() = superblock.root_inode;
-	flush_filesystem();
+	flush_superblock();
 
 	Inode root_inode = {.type = 1, .link_cnt = 65535};
 	DirEntry dir[2] = {DirEntry{cwd_node(), 1, "."}, DirEntry{cwd_node(), 1, ".."}};
@@ -106,7 +107,7 @@ int inode_alloc()
 						int inode = i * BLOCK_SIZE * 8 + j * 8 + k;
 						superblock.inode_allocated++;
 						superblock.inode_free_min = inode + 1;
-						flush_filesystem();
+						flush_superblock();
 						return inode;
 					}
 				}
@@ -129,7 +130,7 @@ void inode_free(uint ino)
 	superblock.inode_allocated--;
 	if (ino < superblock.inode_free_min)
 		superblock.inode_free_min = ino;
-	flush_filesystem();
+	flush_superblock();
 }
 
 int block_alloc()
@@ -150,7 +151,7 @@ int block_alloc()
 						int blockid = i * BLOCK_SIZE * 8 + j * 8 + k;
 						superblock.block_allocated++;
 						superblock.block_free_min = blockid + 1;
-						flush_filesystem();
+						flush_superblock();
 						return blockid;
 					}
 				}
@@ -173,7 +174,7 @@ void block_free(uint blockid)
 	superblock.block_allocated--;
 	if (blockid < superblock.block_free_min)
 		superblock.block_free_min = blockid;
-	flush_filesystem();
+	flush_superblock();
 }
 
 Inode read_inode(uint ino)
