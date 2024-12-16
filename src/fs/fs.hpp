@@ -77,8 +77,9 @@ constexpr size_t DIRENTRY_PER_BLOCK = BLOCK_SIZE / sizeof(DirEntry);
 extern bool init_filesystem();
 extern void flush_superblock();
 
-extern void read_block(void *dest, uint32_t blockid, uint32_t blocks = 1); // do not use user space pointer
-extern void write_block(void *src, uint32_t blockid, uint32_t blocks = 1); // do not use user space pointer
+extern void cache_init();
+extern void read_block(void *dest, uint32_t blockid); // kernel virtual address
+extern void write_block(void *src, uint32_t blockid); // kernel virtual address
 
 extern int inode_alloc();
 extern void inode_free(uint ino);

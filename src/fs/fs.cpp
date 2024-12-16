@@ -19,6 +19,7 @@ uint &cwd_node()
 
 bool init_filesystem()
 {
+	cache_init();
 	SuperBlock *sb = (SuperBlock *)buffer;
 	read_block(buffer, 0);
 	if (sb->magic0 == SUPERBLOCK_MAGIC && sb->magic1 == SUPERBLOCK_MAGIC)
