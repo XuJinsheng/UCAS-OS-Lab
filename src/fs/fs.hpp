@@ -78,8 +78,17 @@ extern bool init_filesystem();
 extern void flush_superblock();
 
 extern void cache_init();
-extern void read_block(void *dest, uint32_t blockid); // kernel virtual address
-extern void write_block(void *src, uint32_t blockid); // kernel virtual address
+struct Block
+{
+	static constexpr int size = BLOCK_SIZE;
+	uint8_t *data; // kernel virtual address
+	Block(int blockid);
+	~Block();
+	void update();
+
+private:
+	uint32_t cacheid;
+};
 
 extern int inode_alloc();
 extern void inode_free(uint ino);
@@ -108,7 +117,6 @@ extern int fs_fwrite(int fd, const char *buff, int length);
 extern int fs_fclose(int fd);
 extern int fs_lseek(int fd, int offset, int whence);
 
-extern uint8_t buffer[BLOCK_SIZE]; // caller saved
 extern SuperBlock superblock;
 extern uint &cwd_inode();
 } // namespace FS

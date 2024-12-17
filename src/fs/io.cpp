@@ -73,15 +73,17 @@ int cache_find(uint32_t blockid)
 	return selected;
 }
 
-void read_block(void *dest, uint32_t blockid)
+Block::Block(int blockid)
 {
-	int i = cache_find(blockid);
-	memcpy(dest, cache_data[i], BLOCK_SIZE);
+	cacheid = cache_find(blockid);
+	data = (uint8_t *)cache_data[cacheid];
 }
-void write_block(void *src, uint32_t blockid)
+Block::~Block()
 {
-	int i = cache_find(blockid);
-	memcpy(cache_data[i], src, BLOCK_SIZE);
-	write_block_direct(src, blockid);
+}
+void Block::update()
+{
+	// cache_dirty[cacheid] = true;
+	write_block_direct(cache_data[cacheid], cache_blockid[cacheid]);
 }
 } // namespace FS

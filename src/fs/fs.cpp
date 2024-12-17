@@ -10,7 +10,6 @@
 namespace FS
 {
 
-uint8_t buffer[BLOCK_SIZE] __attribute__((aligned(4096))); // caller saved
 SuperBlock superblock;
 uint &cwd_node()
 {
@@ -20,8 +19,8 @@ uint &cwd_node()
 bool init_filesystem()
 {
 	cache_init();
-	SuperBlock *sb = (SuperBlock *)buffer;
-	read_block(buffer, 0);
+	Block block(0);
+	SuperBlock *sb = (SuperBlock *)block.data;
 	if (sb->magic0 == SUPERBLOCK_MAGIC && sb->magic1 == SUPERBLOCK_MAGIC)
 	{
 		superblock = *sb;
@@ -37,9 +36,10 @@ bool init_filesystem()
 }
 void flush_superblock()
 {
-	SuperBlock *sb = (SuperBlock *)buffer;
+	Block block(0);
+	SuperBlock *sb = (SuperBlock *)block.data;
 	*sb = superblock;
-	write_block(buffer, 0);
+	block.update();
 }
 int fs_mkfs()
 {
@@ -58,11 +58,18 @@ int fs_mkfs()
 	superblock.block_free_min = BLOCK_SIZE * 8;
 	superblock.magic1 = SUPERBLOCK_MAGIC;
 
-	memset(buffer, 0, BLOCK_SIZE);
 	for (uint32_t i = 0; i < superblock.inode_map_size / (8 * BLOCK_SIZE); i++)
-		write_block(buffer, superblock.inode_map_start_block + i);
+	{
+		Block block(superblock.inode_map_start_block + i);
+		memset(block.data, 0, BLOCK_SIZE);
+		block.update();
+	}
 	for (uint32_t i = 0; i < superblock.block_map_size / (8 * BLOCK_SIZE); i++)
-		write_block(buffer, superblock.block_map_start_block + i);
+	{
+		Block block(superblock.block_map_start_block + i);
+		memset(block.data, 0, BLOCK_SIZE);
+		block.update();
+	}
 
 	superblock.root_inode = inode_alloc();
 	cwd_node() = superblock.root_inode;
@@ -94,17 +101,17 @@ int inode_alloc()
 {
 	for (uint i = superblock.inode_free_min / (BLOCK_SIZE * 8); i < superblock.inode_map_size / (BLOCK_SIZE * 8); i++)
 	{
-		read_block(buffer, superblock.inode_map_start_block + i);
+		Block block(superblock.inode_map_start_block + i);
 		for (uint j = 0; j < BLOCK_SIZE; j++)
 		{
-			if (buffer[j] != 0xff)
+			if (block.data[j] != 0xff)
 			{
 				for (uint k = 0; k < 8; k++)
 				{
-					if ((buffer[j] & (1 << k)) == 0)
+					if ((block.data[j] & (1 << k)) == 0)
 					{
-						buffer[j] |= 1 << k;
-						write_block(buffer, superblock.inode_map_start_block + i);
+						block.data[j] |= 1 << k;
+						block.update();
 						int inode = i * BLOCK_SIZE * 8 + j * 8 + k;
 						superblock.inode_allocated++;
 						superblock.inode_free_min = inode + 1;
@@ -124,10 +131,10 @@ void inode_free(uint ino)
 	uint i = ino / (BLOCK_SIZE * 8);
 	uint j = ino % (BLOCK_SIZE * 8) / 8;
 	uint k = ino % 8;
-	read_block(buffer, superblock.inode_map_start_block + i);
-	assert(buffer[j] & (1 << k));
-	buffer[j] &= ~(1 << k);
-	write_block(buffer, superblock.inode_map_start_block + i);
+	Block block(superblock.inode_map_start_block + i);
+	assert(block.data[j] & (1 << k));
+	block.data[j] &= ~(1 << k);
+	block.update();
 	superblock.inode_allocated--;
 	if (ino < superblock.inode_free_min)
 		superblock.inode_free_min = ino;
@@ -138,17 +145,17 @@ int block_alloc()
 {
 	for (uint i = superblock.block_free_min / (BLOCK_SIZE * 8); i < superblock.block_map_size / (BLOCK_SIZE * 8); i++)
 	{
-		read_block(buffer, superblock.block_map_start_block + i);
+		Block block(superblock.block_map_start_block + i);
 		for (uint j = 0; j < BLOCK_SIZE; j++)
 		{
-			if (buffer[j] != 0xff)
+			if (block.data[j] != 0xff)
 			{
 				for (uint k = 0; k < 8; k++)
 				{
-					if ((buffer[j] & (1 << k)) == 0)
+					if ((block.data[j] & (1 << k)) == 0)
 					{
-						buffer[j] |= 1 << k;
-						write_block(buffer, superblock.block_map_start_block + i);
+						block.data[j] |= 1 << k;
+						block.update();
 						int blockid = i * BLOCK_SIZE * 8 + j * 8 + k;
 						superblock.block_allocated++;
 						superblock.block_free_min = blockid + 1;
@@ -168,10 +175,10 @@ void block_free(uint blockid)
 	uint i = blockid / (BLOCK_SIZE * 8);
 	uint j = blockid % (BLOCK_SIZE * 8) / 8;
 	uint k = blockid % 8;
-	read_block(buffer, superblock.block_map_start_block + i);
-	assert(buffer[j] & (1 << k));
-	buffer[j] &= ~(1 << k);
-	write_block(buffer, superblock.block_map_start_block + i);
+	Block block(superblock.block_map_start_block + i);
+	assert(block.data[j] & (1 << k));
+	block.data[j] &= ~(1 << k);
+	block.update();
 	superblock.block_allocated--;
 	if (blockid < superblock.block_free_min)
 		superblock.block_free_min = blockid;
@@ -181,16 +188,16 @@ void block_free(uint blockid)
 Inode read_inode(uint ino)
 {
 	int i = superblock.inode_start_block + ino / INODE_PER_BLOCK;
-	read_block(buffer, i);
-	return ((Inode *)buffer)[ino % INODE_PER_BLOCK];
+	Block block(i);
+	return ((Inode *)block.data)[ino % INODE_PER_BLOCK];
 }
 
 void write_inode(uint ino, const Inode &inode)
 {
 	int i = superblock.inode_start_block + ino / INODE_PER_BLOCK;
-	read_block(buffer, i);
-	((Inode *)buffer)[ino % INODE_PER_BLOCK] = inode;
-	write_block(buffer, i);
+	Block block(i);
+	((Inode *)block.data)[ino % INODE_PER_BLOCK] = inode;
+	block.update();
 }
 
 constexpr size_t RATIO_PER_LEVEL = BLOCK_SIZE / sizeof(uint);
@@ -200,32 +207,32 @@ constexpr size_t L0_BOUND = INODE_DATA_DIRECT * BLOCK_SIZE, L1_BOUND = L0_BOUND 
 				 L2_BOUND = L1_BOUND + INODE_DATA_L2 * L2_SIZE, L3_BOUND = L2_BOUND + INODE_DATA_L3 * L3_SIZE;
 bool inode_modify_data_recur(bool is_write, uint &blockid, void *data, uint offset, uint length, uint depth)
 {
-	bool modified;
+	bool modified = false;
+	bool allocated_new_block = false;
 	if (blockid == 0)
 	{
 		blockid = block_alloc();
+		allocated_new_block = true;
 		modified = true;
-		memset(buffer, 0, BLOCK_SIZE);
-		write_block(buffer, blockid);
 	}
-	else
+	Block block(blockid);
+	if (allocated_new_block)
 	{
-		read_block(buffer, blockid);
-		modified = false;
+		memset(block.data, 0, BLOCK_SIZE);
 	}
 	if (depth == 0)
 	{
 		if (is_write)
 		{
-			memcpy(buffer + offset, data, length);
-			write_block(buffer, blockid);
+			memcpy(block.data + offset, data, length);
+			block.update();
 		}
 		else
-			memcpy(data, buffer + offset, length);
+			memcpy(data, block.data + offset + offset, length);
 	}
 	else
 	{
-		uint *data = (uint *)buffer;
+		uint *data = (uint *)block.data;
 		size_t size = 0;
 		switch (depth)
 		{
@@ -244,7 +251,7 @@ bool inode_modify_data_recur(bool is_write, uint &blockid, void *data, uint offs
 		bool block_modified = false;
 		block_modified = inode_modify_data_recur(is_write, data[offset / size], data, offset % size, length, depth - 1);
 		if (block_modified)
-			write_block(buffer, blockid);
+			block.update();
 	}
 	return modified;
 }
@@ -288,8 +295,8 @@ int get_inode_by_filename(const char *path, bool create_if_not_existed, uint new
 	for (int i = 0; i < INODE_DATA_DIRECT; i++)
 		if (cwd.data_direct[i])
 		{
-			DirEntry *dir = (DirEntry *)buffer;
-			read_block(buffer, cwd.data_direct[i]);
+			Block block(cwd.data_direct[i]);
+			DirEntry *dir = (DirEntry *)block.data;
 			for (int j = 0; j < DIRENTRY_PER_BLOCK; j++)
 			{
 				if (dir[j].valid && strcmp(dir[j].name, path) == 0)
@@ -328,14 +335,14 @@ void remove_inode_by_filename(const char *path)
 	for (int i = 0; i < INODE_DATA_DIRECT; i++)
 		if (cwd.data_direct[i])
 		{
-			DirEntry *dir = (DirEntry *)buffer;
-			read_block(buffer, cwd.data_direct[i]);
+			Block block(cwd.data_direct[i]);
+			DirEntry *dir = (DirEntry *)block.data;
 			for (int j = 0; j < DIRENTRY_PER_BLOCK; j++)
 			{
 				if (dir[j].valid && strcmp(dir[j].name, path) == 0)
 				{
 					dir[j].valid = 0;
-					write_block(buffer, cwd.data_direct[i]);
+					block.update();
 					cwd.size--;
 					write_inode(cwd_node(), cwd);
 					return;
@@ -376,7 +383,6 @@ int fs_cd(const char *path)
 	}
 	return 0;
 }
-static char ls_buffer[BLOCK_SIZE] __attribute__((aligned(4096)));
 int fs_ls(const char *path, int option)
 {
 	uint old_cwd = cwd_node();
@@ -402,8 +408,8 @@ int fs_ls(const char *path, int option)
 	for (int i = 0; i < INODE_DATA_DIRECT; i++)
 		if (inode.data_direct[i])
 		{
-			DirEntry *dir = (DirEntry *)ls_buffer;
-			read_block(ls_buffer, inode.data_direct[i]);
+			Block block(inode.data_direct[i]);
+			DirEntry *dir = (DirEntry *)block.data;
 			for (int j = 0; j < DIRENTRY_PER_BLOCK; j++)
 			{
 				if (dir[j].valid)
@@ -474,8 +480,8 @@ void free_inode_blocks_recur(uint blockid, size_t depth)
 			block_free(blockid);
 		return;
 	}
-	uint *data = (uint *)buffer;
-	read_block(buffer, blockid);
+	Block block(blockid);
+	uint *data = (uint *)block.data;
 	for (int i = 0; i < BLOCK_SIZE / sizeof(uint); i++)
 		if (data[i])
 			free_inode_blocks_recur(data[i], depth - 1);
