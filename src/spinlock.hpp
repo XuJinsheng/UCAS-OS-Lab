@@ -14,6 +14,10 @@ public:
 		while (flag.test_and_set())
 			;
 	}
+	bool try_lock()
+	{
+		return !flag.test_and_set();
+	}
 	void unlock()
 	{
 		flag.clear();

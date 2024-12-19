@@ -121,4 +121,19 @@ void __throw_bad_function_call()
 	printl("bad function call");
 	assert(false);
 }
+void __throw_invalid_argument(char const *)
+{
+	printl("invalid argument");
+	assert(false);
+}
+void __throw_out_of_range(char const *)
+{
+	printl("out of range");
+	assert(false);
+}
 } // namespace std
+
+extern "C" int *__errno()
+{
+	assert(false);
+}

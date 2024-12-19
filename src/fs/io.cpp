@@ -35,6 +35,8 @@ uint32_t cache_blockid[CACHE_SIZE];
 bool cache_dirty[CACHE_SIZE];
 long cache_age[CACHE_SIZE];
 
+SpinLock cache_lock;
+
 bool policy_writethrough = true;
 long policy_writeback_interval = 0;
 
@@ -50,6 +52,7 @@ void cache_init()
 }
 int cache_find(uint32_t blockid)
 {
+	lock_guard guard(cache_lock);
 	for (int i = 0; i < CACHE_SIZE; i++)
 	{
 		if (cache_blockid[i] == blockid)
@@ -87,7 +90,7 @@ Block::~Block()
 }
 void Block::update()
 {
-	// cache_dirty[cacheid] = true;
+	lock_guard guard(cache_lock);
 	if (policy_writethrough)
 		write_block_direct(cache_data[cacheid], cache_blockid[cacheid]);
 	else
@@ -106,18 +109,21 @@ void cache_writeback()
 }
 void cache_scan_timer()
 {
-	return;
 	static long last_time = 0;
 	if (policy_writethrough)
+		return;
+	if (!cache_lock.try_lock())
 		return;
 	if (last_time + policy_writeback_interval < get_timer())
 	{
 		last_time = get_timer();
 		cache_writeback();
 	}
+	cache_lock.unlock();
 }
 void cache_set_policy(int policy_seconds)
 {
+	lock_guard guard(cache_lock);
 	if (policy_seconds == -1)
 	{
 		policy_writethrough = true;

@@ -218,6 +218,17 @@ int main(void)
 			sys_move_cursor(0, SHELL_BEGIN);
 			printf("------------------- COMMAND -------------------\n");
 		}
+		else if (strcmp(argv[0], "sysctl") == 0)
+		{
+			if (argc < 3)
+				printf("sysctl: lack of arguments\n");
+			else
+			{
+				long key = atoi(argv[1]);
+				long value = atoi(argv[2]);
+				sys_set_parameter(key, value);
+			}
+		}
 		else if (strcmp(argv[0], "mkfs") == 0)
 		{
 			sys_mkfs();

@@ -74,6 +74,8 @@ DEFINE_SYSCALL(sys_ln, SYSCALL_FS_LN)
 DEFINE_SYSCALL(sys_rm, SYSCALL_FS_RM)
 DEFINE_SYSCALL(sys_lseek, SYSCALL_FS_LSEEK)
 
+DEFINE_SYSCALL(sys_set_parameter, SYSCALL_PARAMETER_SET)
+
 /************************************************************/
 /* Do not touch this comment. Reserved for future projects. */
 /************************************************************/

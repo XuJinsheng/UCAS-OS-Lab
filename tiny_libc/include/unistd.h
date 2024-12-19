@@ -72,4 +72,6 @@ int sys_fclose(int fd);
 int sys_ln(const char *src_path, const char *dst_path);
 int sys_rm(const char *path);
 int sys_lseek(int fd, int offset, int whence);
+
+long sys_set_parameter(long key, long value);
 #endif

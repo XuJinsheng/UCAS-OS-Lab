@@ -5,6 +5,7 @@
 #include <fs/fs.hpp>
 #include <schedule.hpp>
 #include <syscall.hpp>
+#include <sysparams.hpp>
 #include <thread.hpp>
 
 #define SYSCALL_EXEC 0
@@ -68,6 +69,7 @@
 #define SYSCALL_FS_LN 77
 #define SYSCALL_FS_RM 78
 #define SYSCALL_FS_LSEEK 79
+#define SYSCALL_PARAMETER_SET 80
 
 typedef ptr_t (*syscall_func)(ptr_t a0, ptr_t a1, ptr_t a2, ptr_t a3, ptr_t a4, ptr_t a5, ptr_t a6);
 constexpr int SYSCALL_NUM = 96;
@@ -130,6 +132,7 @@ void init_syscall()
 	syscall_table[SYSCALL_FS_FWRITE] = (syscall_func)FS::fs_fwrite;
 	syscall_table[SYSCALL_FS_FCLOSE] = (syscall_func)FS::fs_fclose;
 	syscall_table[SYSCALL_FS_LSEEK] = (syscall_func)FS::fs_lseek;
+	syscall_table[SYSCALL_PARAMETER_SET] = (syscall_func)set_parameter;
 }
 
 ptr_t handle_syscall(const ptr_t args[8])
