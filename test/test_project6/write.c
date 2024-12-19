@@ -43,26 +43,6 @@ int main(int argc, char *argv[])
 	end = sys_get_tick();
 	printf("Write end, Time: %ld\n", (end - start) / sys_get_timebase());
 
-	sys_lseek(fd, 0, SEEK_SET);
-
-	// test read
-	start = sys_get_tick();
-	for (int i = 0; i < test_KB / 4; i++)
-	{
-		sys_fread(fd, buff, 4096);
-		for (int j = 0; j < 4096; j++)
-		{
-			if (buff[j] != (j & 0xff))
-			{
-				printf("Read Error\n");
-				sys_fclose(fd);
-				return 0;
-			}
-		}
-	}
-	end = sys_get_tick();
-	printf("Read end, Time: %ld\n", (end - start) / sys_get_timebase());
-
 	sys_fclose(fd);
 	return 0;
 }

@@ -10,8 +10,8 @@ constexpr size_t KiB = 1024;
 constexpr size_t MiB = 1024 * KiB;
 constexpr size_t GiB = 1024 * MiB;
 constexpr size_t BLOCK_SIZE = 4096;
-constexpr size_t BLOCK_START = 512 * MiB; // 512MB
-constexpr size_t BLOCK_END = 1024 * MiB;  // 1GB
+constexpr size_t BLOCK_START = 128 * MiB;
+constexpr size_t BLOCK_END = 512 * MiB;
 constexpr uint32_t SUPERBLOCK_MAGIC = 0x20221205;
 constexpr size_t MAX_BLOCK_NUM = (BLOCK_END - BLOCK_START) / BLOCK_SIZE;
 constexpr size_t MAX_INODE_NUM = 32 * KiB;
@@ -78,6 +78,8 @@ extern bool init_filesystem();
 extern void flush_superblock();
 
 extern void cache_init();
+extern void cache_scan_timer();
+extern void cache_set_policy(int policy_seconds);
 struct Block
 {
 	static constexpr int size = BLOCK_SIZE;

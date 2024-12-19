@@ -34,17 +34,6 @@ int main(int argc, char *argv[])
 	printf("Large file write&read test begin...\n");
 	printf("Test size: %d KB\n", test_KB);
 
-	// test write
-	start = sys_get_tick();
-	for (int i = 0; i < test_KB / 4; i++)
-	{
-		sys_fwrite(fd, buff, 4096);
-	}
-	end = sys_get_tick();
-	printf("Write end, Time: %ld\n", (end - start) / sys_get_timebase());
-
-	sys_lseek(fd, 0, SEEK_SET);
-
 	// test read
 	start = sys_get_tick();
 	for (int i = 0; i < test_KB / 4; i++)

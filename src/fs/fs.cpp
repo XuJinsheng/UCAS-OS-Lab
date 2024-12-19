@@ -228,7 +228,7 @@ bool inode_modify_data_recur(bool is_write, uint &blockid, void *data, uint offs
 			block.update();
 		}
 		else
-			memcpy(data, block.data + offset + offset, length);
+			memcpy(data, block.data + offset, length);
 	}
 	else
 	{

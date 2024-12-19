@@ -2,6 +2,7 @@
 #include <arch/trap_entry.h>
 #include <assert.h>
 #include <common.h>
+#include <fs/fs.hpp>
 #include <kstdio.h>
 #include <net.hpp>
 #include <schedule.hpp>
@@ -51,6 +52,7 @@ void trap_handler(int from_kernel, ptr_t scause, ptr_t stval)
 	case SCAUSE_IRQ_FLAG | IRQ_S_TIMER:
 		net_idle_check();
 		handle_irq_timer();
+		FS::cache_scan_timer();
 		break;
 	case SCAUSE_IRQ_FLAG | IRQ_S_SOFT:
 		csr_clear(CSR_SIP, SIE_SSIE);

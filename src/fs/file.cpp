@@ -8,7 +8,6 @@
 namespace FS
 {
 
-static char file_buffer[BLOCK_SIZE] __attribute__((aligned(4096)));
 class File : public IdObject
 {
 public:
@@ -24,18 +23,19 @@ public:
 		if ((mode & O_RDONLY) == 0)
 			return -1;
 		int read_length = 0;
+		bool inode_modified = false;
 		while (length)
 		{
 			uint block_offset = file_ptr % BLOCK_SIZE;
 			uint read_size = std::min(BLOCK_SIZE - block_offset, (size_t)length);
-			inode_modify_data(false, inode, file_buffer, file_ptr, read_size);
-			memcpy(buff, file_buffer, read_size); // buff is in user space
+			inode_modified |= inode_modify_data(false, inode, buff, file_ptr, read_size);
 			buff += read_size;
 			file_ptr += read_size;
 			length -= read_size;
 			read_length += read_size;
 		}
-		write_inode(inode_idx, inode);
+		if (inode_modified)
+			write_inode(inode_idx, inode);
 		return read_length;
 	}
 	int write(const char *buff, int length)
@@ -43,18 +43,19 @@ public:
 		if ((mode & O_WRONLY) == 0)
 			return -1;
 		int write_length = 0;
+		bool inode_modified = false;
 		while (length)
 		{
 			uint block_offset = file_ptr % BLOCK_SIZE;
 			uint write_size = std::min(BLOCK_SIZE - block_offset, (size_t)length);
-			memcpy(file_buffer, buff, write_size); // buff is in user space
-			inode_modify_data(true, inode, file_buffer, file_ptr, write_size);
+			inode_modified |= inode_modify_data(true, inode, (void *)buff, file_ptr, write_size);
 			buff += write_size;
 			file_ptr += write_size;
 			length -= write_size;
 			write_length += write_size;
 		}
-		write_inode(inode_idx, inode);
+		if (inode_modified)
+			write_inode(inode_idx, inode);
 		return write_length;
 	}
 	int lseek(int offset, int whence)
