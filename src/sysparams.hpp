@@ -2,5 +2,5 @@
 
 #include <common.h>
 
-void init_parameters();
-ptr_t set_parameter(long key, long value);
+extern void init_parameters();
+extern ptr_t set_parameter(long key, long value);

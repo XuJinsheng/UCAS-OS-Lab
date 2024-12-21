@@ -8,6 +8,7 @@
 #include <net.hpp>
 #include <schedule.hpp>
 #include <syscall.hpp>
+#include <sysparams.hpp>
 #include <task_loader.hpp>
 #include <thread.hpp>
 #include <time.hpp>
@@ -68,6 +69,9 @@ int main(int hartid)
 			printk("> [INIT] File system found.\n");
 		else
 			printk("> [INIT] File system not found, creating a new one.\n");
+
+		// Load system parameters (QAQ)
+		init_parameters();
 
 		// Create the first user process
 		Syscall::sys_exec("shell", 0, nullptr);
