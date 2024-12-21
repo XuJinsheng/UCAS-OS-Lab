@@ -8,15 +8,11 @@ static char buff[4096];
 int main(int argc, char *argv[])
 {
 	long start, end;
-	long test_KB = 1;
-	if (argc > 1)
+	long test_KB = 1, loop_count = 0;
+	if (argc < 3 || (test_KB = atoi(argv[1])) == 0 || (loop_count = atoi(argv[2])) == 0)
 	{
-		test_KB = atoi(argv[1]);
-		if (test_KB <= 0)
-		{
-			printf("Invalid argument\n");
-			return 0;
-		}
+		printf("Invalid argument\n");
+		return 0;
 	}
 
 	int fd = sys_fopen("test.dat", O_RDWR);
@@ -32,36 +28,42 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Large file write&read test begin...\n");
-	printf("Test size: %d KB\n", test_KB);
+	printf("Test size: %ld KB, loop count: %ld\n", test_KB, loop_count);
 
-	// test write
-	start = sys_get_tick();
-	for (int i = 0; i < test_KB / 4; i++)
+	for (long loop = 0; loop < loop_count; loop++)
 	{
-		sys_fwrite(fd, buff, 4096);
-	}
-	end = sys_get_tick();
-	printf("Write end, Time: %ld\n", (end - start) / sys_get_timebase());
+		sys_move_cursor(0, 2);
+		printf("Loop %ld\n", loop);
 
-	sys_lseek(fd, 0, SEEK_SET);
-
-	// test read
-	start = sys_get_tick();
-	for (int i = 0; i < test_KB / 4; i++)
-	{
-		sys_fread(fd, buff, 4096);
-		for (int j = 0; j < 4096; j++)
+		// test write
+		sys_lseek(fd, 0, SEEK_SET);
+		start = sys_get_tick();
+		for (int i = 0; i < test_KB / 4; i++)
 		{
-			if (buff[j] != (j & 0xff))
+			sys_fwrite(fd, buff, 4096);
+		}
+		end = sys_get_tick();
+		printf("Write end, Time: %ld\n", (end - start) / sys_get_timebase());
+
+		// test read
+		sys_lseek(fd, 0, SEEK_SET);
+		start = sys_get_tick();
+		for (int i = 0; i < test_KB / 4; i++)
+		{
+			sys_fread(fd, buff, 4096);
+			for (int j = 0; j < 4096; j++)
 			{
-				printf("Read Error\n");
-				sys_fclose(fd);
-				return 0;
+				if (buff[j] != (j & 0xff))
+				{
+					printf("Read Error at loop %ld, position at %d bytes\n", loop, i * 4096 + j);
+					sys_fclose(fd);
+					return 0;
+				}
 			}
 		}
+		end = sys_get_tick();
+		printf("Read end, Time: %ld\n", (end - start) / sys_get_timebase());
 	}
-	end = sys_get_tick();
-	printf("Read end, Time: %ld\n", (end - start) / sys_get_timebase());
 
 	sys_fclose(fd);
 	return 0;
