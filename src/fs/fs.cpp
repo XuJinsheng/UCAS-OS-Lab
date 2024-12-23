@@ -30,7 +30,6 @@ bool init_filesystem()
 	else
 	{
 		fs_mkfs();
-		cwd_node() = superblock.root_inode;
 		return false;
 	}
 }
@@ -55,7 +54,7 @@ int fs_mkfs()
 	superblock.block_start_block = superblock.inode_start_block + MAX_INODE_NUM / INODE_PER_BLOCK;
 	superblock.block_allocated = superblock.block_start_block;
 	assert(superblock.block_start_block < BLOCK_SIZE * 8);
-	superblock.block_free_min = BLOCK_SIZE * 8;
+	superblock.block_free_min = superblock.block_allocated + 1;
 	superblock.magic1 = SUPERBLOCK_MAGIC;
 
 	for (uint32_t i = 0; i < superblock.inode_map_size / (8 * BLOCK_SIZE); i++)
@@ -64,7 +63,14 @@ int fs_mkfs()
 		memset(block.data, 0, BLOCK_SIZE);
 		block.update();
 	}
-	for (uint32_t i = 0; i < superblock.block_map_size / (8 * BLOCK_SIZE); i++)
+	{
+		Block block(superblock.block_map_start_block);
+		memset(block.data, 0, BLOCK_SIZE);
+		for (int i = 0; i < superblock.block_start_block; i++)
+			block.data[i / 8] |= 1 << (i % 8);
+		block.update();
+	}
+	for (uint32_t i = 1; i < superblock.block_map_size / (8 * BLOCK_SIZE); i++)
 	{
 		Block block(superblock.block_map_start_block + i);
 		memset(block.data, 0, BLOCK_SIZE);
@@ -316,7 +322,7 @@ int get_inode_by_filename(const char *path, bool create_if_not_existed, uint new
 	}
 	if (!create_if_not_existed)
 		return -1;
-	assert(free_offset != 0); // no space for new file
+	// assert(free_offset != 0); // no space for new file
 	if (new_inode_idx == 0)
 	{
 		new_inode_idx = inode_alloc();

@@ -30,6 +30,8 @@ int main(int argc, char *argv[])
 	printf("Large file write&read test begin...\n");
 	printf("Test size: %ld KB, loop count: %ld\n", test_KB, loop_count);
 
+	long total_start, total_end;
+	total_start = sys_get_tick();
 	for (long loop = 0; loop < loop_count; loop++)
 	{
 		sys_move_cursor(0, 2);
@@ -54,6 +56,8 @@ int main(int argc, char *argv[])
 		end = sys_get_tick();
 		printf("Read end, Time: %ld\n", (end - start) / sys_get_timebase());
 	}
+	total_end = sys_get_tick();
+	printf("Total Time: %ld\n", (total_end - total_start) / sys_get_timebase());
 
 	sys_fclose(fd);
 	return 0;

@@ -44,7 +44,8 @@ void cache_init()
 {
 	for (int i = 0; i < CACHE_SIZE; i++)
 	{
-		cache_data[i] = kalloc(BLOCK_SIZE);
+		if (!cache_data[i])
+			cache_data[i] = kalloc(BLOCK_SIZE);
 		cache_blockid[i] = -1;
 		cache_dirty[i] = false;
 		cache_age[i] = -1;
