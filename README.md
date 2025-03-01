@@ -1,6 +1,6 @@
 # UCAS-CA-Lab
 
-This project implements an Operating System, for the UCAS course, Operating System Laboratory. This kernel is based on RISC-V64GC ISA
+This project implements an Operating System kernel based on RV64GC, for the UCAS course, Operating System Laboratory in 2024.
 
 ## Supported Features
 
